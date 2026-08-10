@@ -234,6 +234,14 @@ decision_policy:
 
 A prompt-complexity classifier can use the same ingestion, validation, grouped splitting, model training, calibration, reporting, portable export, and parity-test components. It changes the task manifest, label rubric, prompt, group taxonomy, primary metric, and decision policy.
 
+## Code Quality and Test Hardening
+
+Every Python change must pass the `make quality` gate. This runs Ruff's Black-compatible formatter check and its import, syntax, and common-error lint rules. Run `make quality` before every patch review; use `ruff format .` only as an intentional source edit.
+
+The test dependency set includes Hypothesis. Add property tests when input variation can expose contract errors that example tests will miss. For the dataset layer, generate valid and malformed JSON-compatible records to verify that normalization is deterministic, valid records remain valid, and invalid labels, platforms, types, and duplicate normalized command text are rejected. Keep generated tests deterministic through Hypothesis's reproducible failure reporting; preserve every discovered regression as a focused example test.
+
+`make test` runs unit and Hypothesis property tests. `make quality`, `make test`, and `make go-test` are required local checks for a change that affects the corresponding code. Future Go fuzz targets must run with `go test -fuzz` for bounded durations in CI or a dedicated Make target.
+
 ## Implementation Bundles
 
 1. **Binary safety policy and acceptance contract**: define labels, scope, risk taxonomy, thresholds, and non-goals.

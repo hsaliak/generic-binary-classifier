@@ -131,11 +131,12 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
             except (json.JSONDecodeError, RecordValidationError) as error:
                 raise RecordValidationError(f"{path}:{line_number}: {error}") from error
             if record["id"] in ids:
-                raise RecordValidationError(f"{path}:{line_number}: duplicate id {record['id']}")
-            if record["text"] in texts:
                 raise RecordValidationError(
-                    f"{path}:{line_number}: duplicate normalized text {record['text']!r}"
+                    f"{path}:{line_number}: duplicate id {record['id']}"
                 )
+            if record["text"] in texts:
+                message = f"{path}:{line_number}: duplicate normalized text"
+                raise RecordValidationError(f"{message} {record['text']!r}")
             ids.add(record["id"])
             texts.add(record["text"])
             records.append(record)
@@ -148,7 +149,9 @@ def summarize(records: Iterable[dict[str, Any]]) -> DatasetSummary:
     records = list(records)
     labels = Counter(record["label"] for record in records)
     families = Counter(record["family"] for record in records)
-    platforms = Counter(platform for record in records for platform in record["platform"])
+    platforms = Counter(
+        platform for record in records for platform in record["platform"]
+    )
     return DatasetSummary(
         records=len(records),
         labels=dict(sorted(labels.items())),
@@ -167,9 +170,13 @@ def write_jsonl(records: Iterable[dict[str, Any]], path: Path) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Validate command-classifier JSONL data.")
+    parser = argparse.ArgumentParser(
+        description="Validate command-classifier JSONL data."
+    )
     parser.add_argument("--input", required=True, type=Path)
-    parser.add_argument("--output", type=Path, help="Optional normalized JSONL destination.")
+    parser.add_argument(
+        "--output", type=Path, help="Optional normalized JSONL destination."
+    )
     args = parser.parse_args()
 
     records = read_jsonl(args.input)

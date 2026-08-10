@@ -7,7 +7,7 @@ MANIFEST ?= tasks/command-safety-v1.yaml
 ARTIFACT_DIR ?= artifacts/command-safety-v1
 MODEL ?= gpt-5.6-terra:medium
 
-.PHONY: help setup validate-data train test infer go-test generate clean
+.PHONY: help setup validate-data train test quality infer go-test generate clean
 
 help:
 	@printf '%s\n' \
@@ -15,7 +15,8 @@ help:
 	  'make validate-data DATASET=<path>  Validate and normalize JSONL records.' \
 	  'make generate                      Generate a synthetic raw JSONL batch with std_slop.' \
 	  'make train DATASET=<path>           Train and export a model artifact.' \
-	  'make test                          Run Python tests.' \
+	  'make test                          Run Python unit and property tests.' \
+	  'make quality                       Check Python formatting and lint rules.' \
 	  'make go-test                       Run Go tests.' \
 	  'make infer TEXT=<command>           Classify without executing TEXT.'
 
@@ -36,6 +37,10 @@ train:
 
 test:
 	$(PY) -m pytest
+
+quality:
+	$(PY) -m ruff format --check .
+	$(PY) -m ruff check .
 
 go-test:
 	go test ./...
