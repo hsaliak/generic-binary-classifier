@@ -6,6 +6,8 @@ DATASET ?= data/command-safety/processed/development.jsonl
 MANIFEST ?= tasks/command-safety-v1.yaml
 ARTIFACT_DIR ?= artifacts/command-safety-v1
 MODEL ?= gpt-5.6-terra:medium
+BATCH ?= 001
+FOCUS ?= balanced Linux and macOS command safety examples
 
 .PHONY: help setup validate-data train test quality infer go-test generate clean
 
@@ -13,7 +15,7 @@ help:
 	@printf '%s\n' \
 	  'make setup                         Create the Python environment and install test dependencies.' \
 	  'make validate-data DATASET=<path>  Validate and normalize JSONL records.' \
-	  'make generate                      Generate a synthetic raw JSONL batch with std_slop.' \
+	  'make generate BATCH=002 FOCUS=... Generate a focused synthetic JSONL batch.' \
 	  'make train DATASET=<path>           Train and export a model artifact.' \
 	  'make test                          Run Python unit and property tests.' \
 	  'make quality                       Check Python formatting and lint rules.' \
@@ -30,7 +32,7 @@ validate-data:
 
 generate:
 	@mkdir -p data/command-safety/raw
-	std_slop --model $(MODEL) --prompt_file prompts/command-safety-v1.md --output json | $(PY) -c 'import json, sys; print(json.load(sys.stdin)["assistant_message"])' > data/command-safety/raw/std-slop-batch-001.jsonl
+	printf 'Batch ID: std-slop-batch-$(BATCH). Focus: $(FOCUS). Generate distinct examples for this focus.\n' | std_slop --model $(MODEL) --prompt_file prompts/command-safety-v1.md --output json | $(PY) -c 'import json, sys; print(json.load(sys.stdin)["assistant_message"])' > data/command-safety/raw/std-slop-batch-$(BATCH).jsonl
 
 train:
 	$(PY) -m commandclassifier.train --manifest $(MANIFEST) --input $(DATASET) --artifact-dir $(ARTIFACT_DIR)
