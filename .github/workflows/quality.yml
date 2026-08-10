@@ -23,5 +23,5 @@ jobs:
         run: make corpus-report
       - name: Reproducible training and Python artifact verification
         run: make train && make infer TEXT='git status'
-      - name: Go checks
-        run: make go-test
+      - name: Go checks and bounded fuzzing
+        run: cd go && go test ./... && go test -run=^$ -fuzz=FuzzClassifyNeverReturnsInvalidProbability -fuzztime=2s ./cmd/command-classify
