@@ -104,7 +104,7 @@ The current trainer and portable artifact are intentionally specialized to binar
 4. Add a task-specific locked evaluation corpus and model card.
 5. Add Python/Go fixtures for the new artifact configuration before production use.
 
-Do not weaken the review, provenance, overlap, calibration, or release-evidence gates when adding a task.
+Do not weaken the review, provenance, overlap, calibration, or release-evidence gates when adding a task. See [the task-creation skill](docs/task-creation/SKILL.md) for the concise binary-task workflow and generator-backend contract.
 
 ### Worked example: agent task routing
 
