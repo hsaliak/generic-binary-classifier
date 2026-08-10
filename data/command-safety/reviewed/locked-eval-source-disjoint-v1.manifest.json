@@ -1,0 +1,18 @@
+{
+  "dataset": "locked-eval-source-disjoint-v1.jsonl",
+  "dataset_sha256": "578f6652ed76ee18e7481eed12143d68fb4b0e539a47b05d68fd54160e885ba2",
+  "task_id": "command-safety",
+  "task_version": "v1",
+  "records": 39,
+  "source": "synthetic",
+  "generator": "std_slop",
+  "generator_model": "gpt-5.6-terra:medium",
+  "review_status": "reviewed",
+  "reviewed_by": "project user",
+  "usage": "locked evaluation only; never train or tune against this dataset",
+  "known_limitations": [
+    "Synthetic source only",
+    "Same broad generator family as development data; interpret scores conservatively",
+    "39 records; report uncertainty and do not use as sole enforcement evidence"
+  ]
+}

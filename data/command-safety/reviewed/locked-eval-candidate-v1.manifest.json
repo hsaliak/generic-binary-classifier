@@ -1,0 +1,18 @@
+{
+  "dataset": "locked-eval-candidate-v1.jsonl",
+  "task_id": "command-safety",
+  "task_version": "v1",
+  "records": 50,
+  "source": "synthetic",
+  "generator": "std_slop",
+  "generator_model": "gpt-5.6-terra:medium",
+  "generation_session": "commandclassifier-batch-locked-eval-001",
+  "review_status": "reviewed",
+  "reviewed_by": "project user",
+  "reviewed_at": "2026-08-10",
+  "usage": "locked evaluation only; never train or tune against this dataset",
+  "known_limitations": [
+    "Synthetic source only",
+    "Same broad generator family as development data; interpret scores conservatively"
+  ]
+}

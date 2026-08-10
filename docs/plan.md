@@ -251,6 +251,50 @@ The test dependency set includes Hypothesis. Add property tests when input varia
 5. **Go inference**: export a portable model bundle, reproduce inference, and add Python/Go parity tests.
 6. **Hardening**: expand adversarial evaluation, review errors, add regression cases, and document release criteria.
 
+## Handover Status
+
+### Scope and operating policy
+
+This repository builds a reusable synthetic-data text-classification framework. The first task is advisory-only classification of Linux and macOS shell-command text as `safe` or `unsafe`. The model returns a calibrated unsafe probability and optional `review_recommended` policy field. Neither Python nor Go inference may execute input text.
+
+The v1 unsafe policy includes destructive changes, secret exposure or transfer, remote download-and-execute behavior, privilege/security changes, disk operations, and destructive source-control operations.
+
+### Completed work
+
+- Generated and exact-deduplicated a 508-record synthetic development corpus from 12 focused `std_slop` batches.
+- Added schema validation, Unicode normalization, exact duplicate/conflict handling, batch merging, and a corpus overlap report.
+- Added a 50-record user-reviewed synthetic evaluation source and its review manifest.
+- Found 11 exact development/evaluation command overlaps. Preserved the original reviewed source for traceability and created `data/command-safety/reviewed/locked-eval-source-disjoint-v1.jsonl`, a 39-record exact-overlap-free candidate.
+- Implemented a word plus `char_wb` TF-IDF, balanced logistic-regression baseline with five-fold `StratifiedGroupKFold` development evaluation.
+- Implemented artifact generation: Python joblib model, metrics JSON, and portable JSON model export.
+- Implemented non-executing Python CLI inference and initial Go JSON-bundle inference.
+- Added Ruff quality checks, Hypothesis property tests, dataset/merge/CLI tests, and a JSONL extractor that isolates non-record LLM output.
+
+### Measured baseline and limits
+
+The current development grouped-CV result is accuracy 0.778 and unsafe recall 0.641. This unsafe recall is not adequate for enforcement.
+
+The original 50-record evaluation source scored 1.0, but that score is invalid as held-out evidence because of the 11 exact overlaps. The 39-record source-disjoint candidate has not replaced those examples and requires an updated review manifest before it is presented as the locked benchmark. All corpora remain synthetic and share a broad generator family. Do not make enforcement or safety guarantees from current metrics.
+
+### Current implementation status
+
+The project user has confirmed that the source-disjoint evaluation material is human-reviewed. `locked-eval-source-disjoint-v1.jsonl` is therefore the locked evaluation input. It has 39 records and no exact normalized-text overlap with development data. Its reviewed manifest binds its SHA-256 hash. Its small synthetic size remains a release limitation.
+
+Completed hardening work:
+
+1. `make train` rejects development/evaluation overlap before model fitting, verifies the reviewed evaluation manifest, and saves a corpus report plus input hashes in the artifact directory.
+2. Training uses nested `StratifiedGroupKFold` evaluation over the manifest-defined composite groups. It selects sigmoid or isotonic calibration from grouped out-of-fold scores and reports Brier score, calibration-curve data, threshold trade-offs, false-negative rate, and family/platform breakdowns.
+3. The portable artifact is format version 2. It includes source and Python-model hashes, normalization and tokenizer metadata, class order, calibration representation, and decision policy. Python inference verifies bundle and model hashes and reads policy from the artifact.
+
+### Remaining next work
+
+1. Complete Go parity: exact sklearn word and `char_wb` semantics, shared fixtures, probability-tolerance tests, and bounded fuzzing. Do not use Go inference until parity passes.
+2. Add a model card and release criteria. Keep v1 advisory-only until a diverse independently sourced evaluation set meets explicit unsafe-recall requirements.
+
+### Current validation
+
+At the last successful checkpoint, `make quality`, `make test`, and `make go-test` passed. The Python test suite had 14 tests. Re-run all checks after any handover changes.
+
 ## Open Decisions
 
 - Confirm whether secret exposure or transmission, download-and-execute patterns, privilege/security changes, and destructive source-control actions are unsafe in v1.
