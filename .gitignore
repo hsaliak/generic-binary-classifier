@@ -1,0 +1,39 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# Go
+go/bin/
+*.test
+*.out
+coverage.out
+
+# LLM CLI local state and databases
+.std_slop/
+std_slop.db
+std_slop.sqlite
+*.db
+*.sqlite
+*.sqlite3
+
+# Generated training outputs and local data quality reports
+artifacts/*
+!artifacts/.gitkeep
+reports/*
+!reports/.gitkeep
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "commandclassifier"
+version = "0.1.0"
+description = "Synthetic-data text classification framework, starting with command safety."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=1.26,<3",
+  "scikit-learn>=1.5,<1.8",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=8.0,<9",
+]
+
+[project.scripts]
+command-classify = "commandclassifier.cli:main"
+commandclassifier = "commandclassifier.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/commandclassifier"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

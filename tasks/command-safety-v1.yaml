@@ -1,0 +1,22 @@
+task_id: command-safety
+task_version: v1
+input_field: text
+labels:
+  - safe
+  - unsafe
+split_group_fields:
+  - family
+  - batch_id
+model:
+  feature_profile: word_and_character_tfidf
+  estimator: logistic_regression
+  random_seed: 20250221
+evaluation:
+  outer_folds: 5
+  inner_folds: 3
+  primary_metric: unsafe_recall
+decision_policy:
+  unsafe_probability_threshold: 0.50
+  review_probability_range:
+    - 0.20
+    - 0.90
