@@ -8,6 +8,7 @@ ARTIFACT_DIR ?= artifacts/command-safety-v1
 MODEL ?= gpt-5.6-terra:medium
 BATCH ?= 001
 FOCUS ?= balanced Linux and macOS command safety examples
+SESSION ?= commandclassifier-batch-$(BATCH)
 
 .PHONY: help setup validate-data train test quality infer go-test generate clean
 
@@ -32,7 +33,7 @@ validate-data:
 
 generate:
 	@mkdir -p data/command-safety/raw
-	printf 'Batch ID: std-slop-batch-$(BATCH). Focus: $(FOCUS). Generate distinct examples for this focus.\n' | std_slop --model $(MODEL) --prompt_file prompts/command-safety-v1.md --output json | $(PY) -c 'import json, sys; print(json.load(sys.stdin)["assistant_message"])' > data/command-safety/raw/std-slop-batch-$(BATCH).jsonl
+	printf 'Batch ID: std-slop-batch-$(BATCH). Focus: $(FOCUS). Generate distinct examples for this focus.\n' | std_slop --session $(SESSION) --model $(MODEL) --prompt_file prompts/command-safety-v1.md --output json | $(PY) -c 'import json, sys; print(json.load(sys.stdin)["assistant_message"])' > data/command-safety/raw/std-slop-batch-$(BATCH).jsonl
 
 train:
 	$(PY) -m commandclassifier.train --manifest $(MANIFEST) --input $(DATASET) --artifact-dir $(ARTIFACT_DIR)
