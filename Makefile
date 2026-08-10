@@ -10,8 +10,10 @@ MODEL ?= gpt-5.6-terra:medium
 BATCH ?= 001
 FOCUS ?= balanced Linux and macOS command safety examples
 SESSION ?= commandclassifier-batch-$(BATCH)
+GO_ARTIFACT ?= $(ARTIFACT_DIR)/model.json
+GO_BIN ?= $(CURDIR)/bin
 
-.PHONY: help setup validate-data corpus-report train test quality infer go-test generate clean
+.PHONY: help setup validate-data corpus-report train test quality infer go-infer go-install go-test generate clean
 
 help:
 	@printf '%s\n' \
@@ -21,7 +23,9 @@ help:
 	  'make train DATASET=<path>           Verify corpus separation, train, and export an artifact.' \
 	  'make test                          Run Python unit and property tests.' \
 	  'make quality                       Check Python formatting and lint rules.' \
-	  'make go-test                       Run Go tests.' \
+	  'make go-test                       Run Go unit tests.' \
+	  'make go-infer TEXT=<command>        Classify with the portable Go artifact.' \
+	  'make go-install                     Install command-classify to ./bin.' \
 	  'make infer TEXT=<command>           Classify without executing TEXT.'
 
 setup:
@@ -51,6 +55,13 @@ quality:
 
 go-test:
 	cd go && go test ./...
+
+go-infer:
+	cd go && go run ./cmd/command-classify --model ../$(GO_ARTIFACT) --text '$(TEXT)'
+
+go-install:
+	@mkdir -p $(GO_BIN)
+	cd go && GOBIN=$(GO_BIN) go install ./cmd/command-classify
 
 infer:
 	$(PY) -m commandclassifier.cli --artifact-dir $(ARTIFACT_DIR) --text '$(TEXT)'
