@@ -1,0 +1,27 @@
+name: quality
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - name: Install
+        run: make setup
+      - name: Python quality and tests
+        run: make quality && make test
+      - name: Corpus separation
+        run: make corpus-report
+      - name: Reproducible training and Python artifact verification
+        run: make train && make infer TEXT='git status'
+      - name: Go checks
+        run: make go-test

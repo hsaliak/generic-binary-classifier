@@ -289,7 +289,8 @@ Completed hardening work:
 ### Remaining next work
 
 1. Complete Go parity: exact sklearn word and `char_wb` semantics, shared fixtures, probability-tolerance tests, and bounded fuzzing. Do not use Go inference until parity passes.
-2. Add a model card and release criteria. Keep v1 advisory-only until a diverse independently sourced evaluation set meets explicit unsafe-recall requirements.
+2. Maintain independently sourced evaluation evidence as specified in [external evaluation evidence](external-evaluation-evidence.md). The [model card](model-card.md) and [release criteria](release-criteria.md) define the advisory-only boundary and enforcement prerequisites.
+3. CI runs quality, Python tests, corpus separation, reproducible training, Python artifact verification, and Go checks on pushes and pull requests.
 
 ### Current validation
 
