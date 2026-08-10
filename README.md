@@ -106,6 +106,67 @@ The current trainer and portable artifact are intentionally specialized to binar
 
 Do not weaken the review, provenance, overlap, calibration, or release-evidence gates when adding a task.
 
+### Worked example: agent task routing
+
+A useful future task can estimate the resources an agent task is likely to need from the **user context** and **assistant task text**. For example, it can recommend a reasoning tier (`low`, `medium`, or `high`) and a model-capability tier (`weak`, `medium`, or `strong`). These are routing recommendations, not guarantees of task quality or successful completion.
+
+Use two independently reviewed targets rather than combining the two dimensions into nine opaque labels:
+
+```json
+{
+  "id": "route-0001",
+  "user_context": "Repository is a Python command classifier with an existing test suite.",
+  "assistant_text": "Add a Make target and update the README with usage examples.",
+  "reasoning_effort": "low",
+  "model_capability": "weak",
+  "rationale": ["localized documentation and build-file change", "no cross-language parity work"],
+  "source": "human_authored",
+  "review_status": "reviewed"
+}
+```
+
+A higher-resource example could be:
+
+```json
+{
+  "id": "route-0002",
+  "user_context": "A portable Python/Go model artifact must give equivalent probabilities.",
+  "assistant_text": "Implement Unicode-compatible TF-IDF, calibration, shared fixtures, fuzzing, and release gates in Go.",
+  "reasoning_effort": "high",
+  "model_capability": "strong",
+  "rationale": ["cross-language numerical parity", "Unicode and calibration edge cases", "safety release impact"],
+  "source": "human_authored",
+  "review_status": "reviewed"
+}
+```
+
+Implement this as two binary or ordinal classifiers after the generic-task refactor:
+
+- `reasoning_effort`: train ordered decisions such as `high_or_lower` and `medium_or_lower`, then derive `low`, `medium`, or `high` from calibrated probabilities; or add a validated multiclass artifact contract.
+- `model_capability`: use the same ordered approach for `weak`, `medium`, and `strong`.
+
+Create separate development, calibration, and locked evaluation sets. Split by task family, product area, authoring source, or request template so near-duplicate tasks cannot leak across splits. Review routing outcomes with human operators, measure per-tier confusion and costly under-routing, and keep an explicit manual-override path. Do not use a generated recommendation as the only control for high-impact agent actions.
+
+A task manifest can define the input fields and output policy after the trainer becomes generic:
+
+```yaml
+task_id: agent-routing
+task_version: v1
+input_fields:
+  - user_context
+  - assistant_text
+outputs:
+  - name: reasoning_effort
+    labels: [low, medium, high]
+  - name: model_capability
+    labels: [weak, medium, strong]
+split_group_fields:
+  - task_family
+  - source_batch
+```
+
+This example cannot run through the current `command-safety-v1` trainer unchanged. That trainer has a fixed binary `safe`/`unsafe` contract. Complete the five generic-task changes above, then add task-specific schema validation, Python/Go fixtures, evaluation criteria, and a model card before using this routing task in production.
+
 ## Useful commands
 
 ```bash
