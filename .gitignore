@@ -25,6 +25,8 @@ coverage.out
 std_slop.db
 std_slop.sqlite
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
 
