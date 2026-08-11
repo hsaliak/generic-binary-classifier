@@ -1,182 +1,229 @@
-# Command Classifier
+# Reviewed Binary Text Classification Framework
 
-Command Classifier is a reusable framework for training versioned text classifiers from reviewed datasets. The first task, `command-safety-v1`, classifies Linux and macOS shell-command text as `safe` or `unsafe` and returns a calibrated unsafe probability.
+This repository is a framework for building **reviewed synthetic binary text-classification tasks**. It trains a calibrated text classifier, exports one portable v3 artifact, and supports equivalent inference in Python and Go.
 
-The Python and Go tools classify text only. They never execute the supplied command.
+The framework classifies text only. It never executes supplied text.
 
-> **Operating status:** v1 is advisory-only. A `safe` result is not permission to execute a command. See the [model card](docs/model-card.md) and [release criteria](docs/release-criteria.md).
+## What the framework provides
 
-## Quick start
+A task defines:
 
-Requirements: Python 3.11+, Go 1.25+, and `make`.
+- one or more text input fields;
+- exactly two labels;
+- one positive class;
+- grouped train/test split fields;
+- decision and review probability policy;
+- reviewed development and locked-evaluation datasets.
+
+The training pipeline uses grouped nested evaluation and calibration. It rejects duplicate canonical inputs and development/locked-evaluation overlap. The artifact includes task metadata, input serialization, labels, probability output name, policy, feature metadata, calibration metadata, and input hashes.
+
+Python and Go validate the v3 artifact hash and use the same input serialization. They reject unsupported artifact versions, missing or unknown fields, and empty input values.
+
+## Scope and limits
+
+The current framework supports only binary text classification with one output and one positive class. It does not support multiclass, ordinal, multi-label, multiple-output, arbitrary-estimator, or executable-input tasks.
+
+Generated records are candidate material, not trusted training data. Human review is required before data enters development or locked evaluation.
+
+## Included task: dangerous command classification
+
+`command-safety-v1` is the included task. It classifies Linux and macOS shell-command text as `safe` or `unsafe`; `unsafe` is the positive class.
+
+The result is advisory only. A `safe` result is not permission to run a command. The classifier never runs the command. See the [model card](docs/model-card.md), [release criteria](docs/release-criteria.md), and [external evaluation evidence](docs/external-evaluation-evidence.md).
+
+## Quick start: command safety
+
+Requirements: Python 3.11+, Go, and `make`.
 
 ```bash
 make setup
 make quality
 make test
-make corpus-report
-make train
-```
-
-`make train` validates the reviewed evaluation manifest and rejects development/evaluation overlap before it writes an artifact.
-
-## Synthetic data workflow
-
-The development corpus is generated in focused batches using `std_slop` and the task prompt in `prompts/command-safety-v1.md`.
-
-```bash
-make generate BATCH=013 FOCUS='quoted destructive commands and safe near-neighbours'
-```
-
-Generation output is raw input, not training-ready data. Validate, review, and merge batches before training:
-
-```bash
-make validate-data DATASET=data/command-safety/raw/std-slop-batch-013.jsonl
-python -m commandclassifier.merge_data \
-  --input data/command-safety/raw/*.jsonl \
-  --output data/command-safety/processed/development.jsonl
-make corpus-report
-```
-
-Synthetic data is useful for development coverage but cannot authorize enforcement. Preserve prompts, generator details, review decisions, hashes, and manifests. For independently sourced evaluation evidence and maintenance requirements, see [external evaluation evidence](docs/external-evaluation-evidence.md).
-
-## Python inference
-
-Train first if `artifacts/command-safety-v1/` does not contain a current artifact:
-
-```bash
 make train
 make infer TEXT='git status'
-make infer TEXT='rm -rf /tmp/example'
-```
-
-The Python CLI verifies the portable bundle hash and Python model hash. It emits JSON with `label`, `unsafe_probability`, `confidence`, `review_recommended`, and `model_version`.
-
-## Go inference
-
-The Go runtime reads the portable `model.json` and its required `model.json.sha256` sidecar. It does not require Python or `model.joblib` at inference time.
-
-For development use:
-
-```bash
-make train
 make go-infer TEXT='git status'
-make go-infer TEXT='git reset --hard HEAD~3'
 ```
 
-To install the Go binary locally:
+`make train` requires a reviewed, hash-bound locked-evaluation manifest and rejects development/evaluation input overlap before it writes an artifact.
+
+Command-safety inference accepts one field:
 
 ```bash
-make go-install
-./bin/command-classify \
-  --model artifacts/command-safety-v1/model.json \
-  --text 'git status'
+commandclassifier \
+  --artifact-dir artifacts/command-safety-v1 \
+  --text 'rm -rf /tmp/example'
 ```
 
-To deploy it separately, copy both portable artifact files with the binary:
+The result includes `label`, `positive_probability`, `confidence`, `review_recommended`, `model_version`, and task metadata.
 
-```text
-command-classify
-model.json
-model.json.sha256
-```
+## Create a new task
 
-The portable JSON contains the model weights: vocabularies, IDF values, linear coefficients, intercept, calibration mapping, normalization metadata, and decision policy. The Python-only `model.joblib` is not required by Go. Keep the bundle and sidecar together; Go fails if the sidecar hash does not match.
+Start with `templates/binary-task/` and use the working multi-field reference in `tests/fixtures/generic-multifield/`.
 
-Test the Go implementation with:
-
-```bash
-make go-test
-cd go && go test -run=^$ \
-  -fuzz=FuzzClassifyNeverReturnsInvalidProbability \
-  -fuzztime=5s ./cmd/command-classify
-```
-
-## Creating another task
-
-The data contract is reusable: create a new task manifest, prompt, raw/processed/reviewed dataset directories, and a locked reviewed evaluation manifest. Keep labels mutually exclusive, record provenance and review metadata, and require overlap checks before training.
-
-The current trainer and portable artifact are intentionally specialized to binary `safe`/`unsafe` scoring: they name `unsafe` as the positive class and emit command-safety policy fields. To make a fully generic task:
-
-1. Add task-configured labels, positive class, model version, and decision-policy output fields.
-2. Replace the fixed `safe`/`unsafe` checks in `train.py`, `cli.py`, exporter, and Go runtime with validated manifest configuration.
-3. Define task-specific prompt, schema extensions, class balance, grouped split fields, and review policy.
-4. Add a task-specific locked evaluation corpus and model card.
-5. Add Python/Go fixtures for the new artifact configuration before production use.
-
-Do not weaken the review, provenance, overlap, calibration, or release-evidence gates when adding a task. See [the task-creation skill](docs/task-creation/SKILL.md) for the concise binary-task workflow and generator-backend contract.
-
-### Worked example: agent task routing
-
-A useful future task can estimate the resources an agent task is likely to need from the **user context** and **assistant task text**. For example, it can recommend a reasoning tier (`low`, `medium`, or `high`) and a model-capability tier (`weak`, `medium`, or `strong`). These are routing recommendations, not guarantees of task quality or successful completion.
-
-Use two independently reviewed targets rather than combining the two dimensions into nine opaque labels:
-
-```json
-{
-  "id": "route-0001",
-  "user_context": "Repository is a Python command classifier with an existing test suite.",
-  "assistant_text": "Add a Make target and update the README with usage examples.",
-  "reasoning_effort": "low",
-  "model_capability": "weak",
-  "rationale": ["localized documentation and build-file change", "no cross-language parity work"],
-  "source": "human_authored",
-  "review_status": "reviewed"
-}
-```
-
-A higher-resource example could be:
-
-```json
-{
-  "id": "route-0002",
-  "user_context": "A portable Python/Go model artifact must give equivalent probabilities.",
-  "assistant_text": "Implement Unicode-compatible TF-IDF, calibration, shared fixtures, fuzzing, and release gates in Go.",
-  "reasoning_effort": "high",
-  "model_capability": "strong",
-  "rationale": ["cross-language numerical parity", "Unicode and calibration edge cases", "safety release impact"],
-  "source": "human_authored",
-  "review_status": "reviewed"
-}
-```
-
-Implement this as two binary or ordinal classifiers after the generic-task refactor:
-
-- `reasoning_effort`: train ordered decisions such as `high_or_lower` and `medium_or_lower`, then derive `low`, `medium`, or `high` from calibrated probabilities; or add a validated multiclass artifact contract.
-- `model_capability`: use the same ordered approach for `weak`, `medium`, and `strong`.
-
-Create separate development, calibration, and locked evaluation sets. Split by task family, product area, authoring source, or request template so near-duplicate tasks cannot leak across splits. Review routing outcomes with human operators, measure per-tier confusion and costly under-routing, and keep an explicit manual-override path. Do not use a generated recommendation as the only control for high-impact agent actions.
-
-A task manifest can define the input fields and output policy after the trainer becomes generic:
+Create a manifest, prompt, schema, raw-data directory, reviewed development dataset, reviewed locked-evaluation dataset, model card, and release criteria. A minimal multi-field manifest is:
 
 ```yaml
-task_id: agent-routing
+task_id: request-policy
 task_version: v1
-input_fields:
-  - user_context
-  - assistant_text
-outputs:
-  - name: reasoning_effort
-    labels: [low, medium, high]
-  - name: model_capability
-    labels: [weak, medium, strong]
-split_group_fields:
-  - task_family
-  - source_batch
+input:
+  fields: [user_context, candidate_text]
+labels:
+  values: [allow, block]
+  positive_class: block
+data:
+  prompt: prompts/request-policy-v1.md
+  raw_directory: data/request-policy/raw
+  processed_dataset: data/request-policy/processed/development.jsonl
+  locked_evaluation: data/request-policy/reviewed/locked-eval-v1.jsonl
+  split_group_fields: [family, batch_id]
+generation:
+  backend: std_slop # or claude
+  model: configured-model-id
+model:
+  feature_profile: word_and_character_tfidf
+  estimator: logistic_regression
+  random_seed: 20250221
+evaluation:
+  outer_folds: 5
+  inner_folds: 3
+  primary_metric: positive_recall
+decision_policy:
+  positive_probability_threshold: 0.50
+  review_probability_range: [0.20, 0.90]
 ```
 
-This example cannot run through the current `command-safety-v1` trainer unchanged. That trainer has a fixed binary `safe`/`unsafe` contract. Complete the five generic-task changes above, then add task-specific schema validation, Python/Go fixtures, evaluation criteria, and a model card before using this routing task in production.
+Quote labels such as `"yes"` and `"no"`; YAML otherwise parses them as booleans.
 
-## Useful commands
+For multi-field tasks, each record uses an `inputs` object:
+
+```json
+{
+  "id": "request-001",
+  "inputs": {
+    "user_context": "Repository contains a production configuration.",
+    "candidate_text": "Delete the active configuration."
+  },
+  "label": "block",
+  "family": "configuration_change",
+  "batch_id": "batch-001"
+}
+```
+
+All configured fields must be present and non-empty. IDs and canonical serialized inputs must be unique. Keep development and locked evaluation disjoint.
+
+## Generate and review candidate material
+
+Generate focused raw candidate material with either configured backend:
+
+```bash
+make generate \
+  TASK=tasks/request-policy-v1.yaml \
+  BACKEND=std_slop \
+  BATCH=001 \
+  FOCUS='positive boundary cases'
+```
+
+Or:
+
+```bash
+make generate \
+  TASK=tasks/request-policy-v1.yaml \
+  BACKEND=claude \
+  BATCH=001 \
+  FOCUS='positive boundary cases'
+```
+
+The Claude backend uses non-interactive `claude -p`. Both backends preserve raw output. Review generated records before merging them into a development corpus. Preserve prompts, backend/model details, batch IDs, review decisions, and hashes.
+
+Create a separate reviewed locked-evaluation dataset and a sibling manifest such as:
+
+```json
+{
+  "dataset": "locked-eval-v1.jsonl",
+  "dataset_sha256": "<sha256>",
+  "review_status": "reviewed",
+  "reviewer": "reviewer-id",
+  "review_date": "YYYY-MM-DD"
+}
+```
+
+Do not select features, calibrators, thresholds, or policy from locked evaluation data.
+
+## Train a new task
+
+```bash
+make train \
+  MANIFEST=tasks/request-policy-v1.yaml \
+  DATASET=data/request-policy/processed/development.jsonl \
+  EVALUATION=data/request-policy/reviewed/locked-eval-v1.jsonl \
+  ARTIFACT_DIR=artifacts/request-policy-v1
+```
+
+The resulting artifact is `artifacts/request-policy-v1/model.json` with its required `model.json.sha256` sidecar. Python also writes `model.joblib`; Go does not require it.
+
+## Infer on a new task
+
+Use `--text` only for a one-field artifact:
+
+```bash
+commandclassifier \
+  --artifact-dir artifacts/request-policy-v1 \
+  --text 'candidate text'
+```
+
+Use `--input-json` for multi-field artifacts:
+
+```bash
+commandclassifier \
+  --artifact-dir artifacts/request-policy-v1 \
+  --input-json '{
+    "user_context": "Repository context",
+    "candidate_text": "Requested action"
+  }'
+```
+
+Go uses the same v3 artifact and structured input contract:
+
+```bash
+cd go
+go run ./cmd/command-classify \
+  --model ../artifacts/request-policy-v1/model.json \
+  --input-json '{
+    "user_context": "Repository context",
+    "candidate_text": "Requested action"
+  }'
+```
+
+For multiple fields, both runtimes serialize fields in manifest order with stable tags. For example:
+
+```text
+<USER_CONTEXT>
+Repository context
+
+<CANDIDATE_TEXT>
+Requested action
+```
+
+## Release checklist
+
+Before using a task outside development:
+
+1. Review all training and locked-evaluation records.
+2. Verify zero canonical-input overlap.
+3. Inspect grouped nested evaluation, calibration, threshold, and locked-evaluation metrics.
+4. Verify Python/Go parity for one-field or multi-field task inputs.
+5. Write a task-specific model card and release criteria.
+6. Keep a human override and review path for high-impact decisions.
+
+Useful commands:
 
 ```bash
 make help
 make quality
 make test
-make corpus-report
 make train
-make infer TEXT='git status'
-make go-infer TEXT='git status'
-make go-install
 make go-test
+make go-install
 ```
+
+For the detailed task workflow and backend contract, see [the task creation guide](docs/task-creation/SKILL.md).

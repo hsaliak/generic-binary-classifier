@@ -7,6 +7,8 @@ MANIFEST ?= tasks/command-safety-v1.yaml
 ARTIFACT_DIR ?= artifacts/command-safety-v1
 EVALUATION ?= data/command-safety/reviewed/locked-eval-source-disjoint-v1.jsonl
 MODEL ?= gpt-5.6-terra:medium
+TASK ?= $(MANIFEST)
+BACKEND ?= std_slop
 BATCH ?= 001
 FOCUS ?= balanced Linux and macOS command safety examples
 SESSION ?= commandclassifier-batch-$(BATCH)
@@ -19,7 +21,7 @@ help:
 	@printf '%s\n' \
 	  'make setup                         Create the Python environment and install test dependencies.' \
 	  'make validate-data DATASET=<path>  Validate and normalize JSONL records.' \
-	  'make generate BATCH=002 FOCUS=... Generate a focused synthetic JSONL batch.' \
+	  'make generate TASK=<manifest> BACKEND=claude|std_slop BATCH=002 FOCUS=... Generate raw candidate material.' \
 	  'make train DATASET=<path>           Verify corpus separation, train, and export an artifact.' \
 	  'make test                          Run Python unit and property tests.' \
 	  'make quality                       Check Python formatting and lint rules.' \
@@ -40,8 +42,7 @@ corpus-report:
 	$(PY) -m commandclassifier.corpus_report --development $(DATASET) --evaluation $(EVALUATION) --output reports/corpus-report.json
 
 generate:
-	@mkdir -p data/command-safety/raw
-	printf 'Batch ID: std-slop-batch-$(BATCH). Focus: $(FOCUS). Generate distinct examples for this focus.\n' | std_slop --session $(SESSION) --model $(MODEL) --prompt_file prompts/command-safety-v1.md --output json | $(PY) -m commandclassifier.extract_jsonl > data/command-safety/raw/std-slop-batch-$(BATCH).jsonl
+	$(PY) -m commandclassifier.generate --task $(TASK) --backend $(BACKEND) --batch $(BATCH) --focus '$(FOCUS)'
 
 train:
 	$(PY) -m commandclassifier.train --manifest $(MANIFEST) --input $(DATASET) --evaluation $(EVALUATION) --artifact-dir $(ARTIFACT_DIR)

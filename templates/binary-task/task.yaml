@@ -1,0 +1,29 @@
+# Binary text-classification task template
+# Copy this directory and replace every `example-task` value before generation.
+task_id: example-task
+task_version: v1
+input:
+  fields: [text]
+labels:
+  values: [allow, block]
+  positive_class: block
+data:
+  prompt: templates/binary-task/prompts/example-task-v1.md
+  raw_directory: templates/binary-task/data/raw
+  processed_dataset: templates/binary-task/data/processed/development.jsonl
+  locked_evaluation: templates/binary-task/data/reviewed/locked-eval-v1.jsonl
+  split_group_fields: [family, batch_id]
+generation:
+  backend: std_slop # change to claude to use `claude -p`
+  model: configured-model-id
+model:
+  feature_profile: word_and_character_tfidf
+  estimator: logistic_regression
+  random_seed: 20250221
+evaluation:
+  outer_folds: 5
+  inner_folds: 3
+  primary_metric: positive_recall
+decision_policy:
+  positive_probability_threshold: 0.50
+  review_probability_range: [0.20, 0.90]

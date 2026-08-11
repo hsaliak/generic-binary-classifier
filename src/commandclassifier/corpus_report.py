@@ -7,6 +7,8 @@ import hashlib
 import json
 from pathlib import Path
 
+from commandclassifier.task_definition import TaskDefinition
+from commandclassifier.task_records import read_task_jsonl
 from commandclassifier.validate_data import read_jsonl, summarize
 
 
@@ -15,14 +17,30 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def build_report(development: Path, evaluation: Path) -> dict[str, object]:
-    """Summarize validated corpora and their normalized-text overlap."""
-    dev = read_jsonl(development)
-    ev = read_jsonl(evaluation)
-    overlap = sorted({r["text"] for r in dev} & {r["text"] for r in ev})
+def build_report(
+    development: Path, evaluation: Path, task: TaskDefinition | None = None
+) -> dict[str, object]:
+    """Summarize corpora and reject canonical input overlap."""
+    if task is None:
+        dev = read_jsonl(development)
+        ev = read_jsonl(evaluation)
+        development_summary = summarize(dev).__dict__
+        evaluation_summary = summarize(ev).__dict__
+        overlap = sorted(
+            {record["text"] for record in dev} & {record["text"] for record in ev}
+        )
+    else:
+        dev = read_task_jsonl(development, task)
+        ev = read_task_jsonl(evaluation, task)
+        development_summary = {"records": len(dev)}
+        evaluation_summary = {"records": len(ev)}
+        overlap = sorted(
+            {record["_serialized_input"] for record in dev}
+            & {record["_serialized_input"] for record in ev}
+        )
     return {
-        "development": summarize(dev).__dict__,
-        "evaluation": summarize(ev).__dict__,
+        "development": development_summary,
+        "evaluation": evaluation_summary,
         "input_sha256": {
             "development": sha256(development),
             "evaluation": sha256(evaluation),

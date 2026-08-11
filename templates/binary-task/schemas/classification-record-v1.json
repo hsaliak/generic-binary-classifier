@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","title":"Binary task record","type":"object","required":["id","inputs","label","family","batch_id"],"properties":{"id":{"type":"string"},"inputs":{"type":"object"},"label":{"type":"string"},"family":{"type":"string"},"batch_id":{"type":"string"}}}

@@ -1,0 +1,2 @@
+{"id":"eval-01","inputs":{"user_context":"review theta 1","assistant_text":"allow inspect theta 1"},"label":"allow","family":"theta","batch_id":"locked"}
+{"id":"eval-02","inputs":{"user_context":"review theta 2","assistant_text":"block delete theta 2"},"label":"block","family":"theta","batch_id":"locked"}

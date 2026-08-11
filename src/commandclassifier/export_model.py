@@ -10,7 +10,9 @@ from typing import Any
 
 import sklearn
 
-FORMAT_VERSION = 2
+from commandclassifier.task_definition import TaskDefinition
+
+FORMAT_VERSION = 3
 
 
 def calibration_bundle(model: Any) -> dict[str, Any]:
@@ -34,7 +36,7 @@ def export_model(
     destination: Path,
     input_hashes: dict[str, str],
     decision_policy: dict[str, Any],
-    task_version: str,
+    task: TaskDefinition,
     model_sha256: str,
 ) -> None:
     """Write exact feature, probability, provenance, and policy metadata."""
@@ -44,11 +46,21 @@ def export_model(
     classifier = model.base_model.named_steps["model"]
     bundle = {
         "format_version": FORMAT_VERSION,
-        "model_version": f"command-safety-{task_version}",
+        "model_version": task.model_version,
+        "task": {"id": task.task_id, "version": task.task_version},
+        "input": {
+            "fields": list(task.input_fields),
+            "serialization": {
+                "format": "tagged-v1" if len(task.input_fields) > 1 else "text-v1",
+                "tag_case": "upper",
+                "separator": "\\n\\n",
+            },
+        },
         "input_sha256": input_hashes,
         "artifact_sha256": {"model.joblib": model_sha256},
         "labels": list(model.classes_),
-        "positive_class": "unsafe",
+        "positive_class": task.positive_class,
+        "positive_probability_field": "positive_probability",
         "normalization": {"unicode": "NFC", "strip_outer_whitespace": True},
         "word": {
             "analyzer": "word",

@@ -32,10 +32,12 @@ def record(index: int, label: str, group: str) -> dict[str, object]:
 def config() -> dict[str, object]:
     return {
         "split_group_fields": ["family", "batch_id"],
+        "labels": ["safe", "unsafe"],
+        "positive_class": "unsafe",
         "model": {"random_seed": 7},
         "evaluation": {"outer_folds": 3, "inner_folds": 2},
         "decision_policy": {
-            "unsafe_probability_threshold": 0.5,
+            "positive_probability_threshold": 0.5,
             "review_probability_range": [0.2, 0.9],
         },
     }
@@ -97,5 +99,32 @@ def test_nested_training_reports_calibration_and_policy_metrics():
     assert list(model.classes_) == ["safe", "unsafe"]
     assert report["development_nested_cv"]["threshold_table"]
     assert 0 <= report["development_nested_cv"]["brier_score"] <= 1
-    assert report["locked_evaluation"]["breakdown"]["platform"]
-    assert report["policy"]["unsafe_probability_threshold"] == 0.5
+    assert report["locked_evaluation"]["breakdown"]["family"]
+    assert report["policy"]["positive_probability_threshold"] == 0.5
+
+
+def test_nested_training_uses_configured_positive_label():
+    training = [
+        record(
+            group * 4 + offset,
+            "safe" if label == "unsafe" else "unsafe",
+            f"group-{group}",
+        )
+        for group in range(6)
+        for offset, label in enumerate(("safe", "unsafe", "safe", "unsafe"))
+    ]
+    evaluation = [
+        record(100, "unsafe", "evaluation-safe"),
+        record(101, "safe", "evaluation-unsafe"),
+    ]
+    generic_config = config() | {
+        "labels": ["allow", "block"],
+        "positive_class": "allow",
+    }
+    for item in training + evaluation:
+        item["label"] = "allow" if item["label"] == "safe" else "block"
+
+    model, report = train_and_report(training, evaluation, generic_config)
+
+    assert model.positive_class == "allow"
+    assert "positive_recall" in report["development_nested_cv"]["threshold_table"][0]

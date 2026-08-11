@@ -1,12 +1,20 @@
 task_id: command-safety
 task_version: v1
-input_field: text
+input:
+  fields: [text]
 labels:
-  - safe
-  - unsafe
-split_group_fields:
-  - family
-  - batch_id
+  values: [safe, unsafe]
+  positive_class: unsafe
+data:
+  record_schema: schemas/classification-record-v1.json
+  prompt: prompts/command-safety-v1.md
+  raw_directory: data/command-safety/raw
+  processed_dataset: data/command-safety/processed/development.jsonl
+  locked_evaluation: data/command-safety/reviewed/locked-eval-source-disjoint-v1.jsonl
+  split_group_fields: [family, batch_id]
+generation:
+  backend: std_slop
+  model: gpt-5.6-terra:medium
 model:
   feature_profile: word_and_character_tfidf
   estimator: logistic_regression
@@ -14,9 +22,7 @@ model:
 evaluation:
   outer_folds: 5
   inner_folds: 3
-  primary_metric: unsafe_recall
+  primary_metric: positive_recall
 decision_policy:
-  unsafe_probability_threshold: 0.50
-  review_probability_range:
-    - 0.20
-    - 0.90
+  positive_probability_threshold: 0.50
+  review_probability_range: [0.20, 0.90]

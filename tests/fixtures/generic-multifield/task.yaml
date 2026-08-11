@@ -1,0 +1,24 @@
+task_id: generic-multifield-fixture
+task_version: v1
+input:
+  fields: [user_context, assistant_text]
+labels:
+  values: [allow, block]
+  positive_class: block
+data:
+  prompt: templates/binary-task/prompts/example-task-v1.md
+  raw_directory: tests/fixtures/generic-multifield/raw
+  processed_dataset: tests/fixtures/generic-multifield/development.jsonl
+  locked_evaluation: tests/fixtures/generic-multifield/evaluation.jsonl
+  split_group_fields: [family, batch_id]
+generation:
+  backend: std_slop
+  model: fixture
+model:
+  random_seed: 7
+evaluation:
+  outer_folds: 3
+  inner_folds: 2
+decision_policy:
+  positive_probability_threshold: 0.5
+  review_probability_range: [0.2, 0.9]

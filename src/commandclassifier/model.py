@@ -47,11 +47,16 @@ def pipeline() -> Pipeline:
     )
 
 
-def unsafe_scores(model: Pipeline, texts: Sequence[str]) -> np.ndarray:
-    """Return the decision score for the explicitly named unsafe class."""
-    if list(model.classes_) != ["safe", "unsafe"]:
-        raise ValueError("model classes must be exactly ['safe', 'unsafe']")
-    return np.asarray(model.decision_function(texts), dtype=float)
+def positive_scores(
+    model: Pipeline, texts: Sequence[str], positive_class: str
+) -> np.ndarray:
+    """Return decision scores oriented toward the configured positive class."""
+    classes = list(model.classes_)
+    if len(classes) != 2 or positive_class not in classes:
+        raise ValueError("model classes must contain the configured positive class")
+    scores = np.asarray(model.decision_function(texts), dtype=float)
+    # sklearn binary decision scores are oriented to classes_[1].
+    return scores if classes[1] == positive_class else -scores
 
 
 @dataclass
@@ -62,15 +67,22 @@ class CalibratedTextClassifier:
     calibration_method: str
     calibration_model: LogisticRegression | IsotonicRegression
     classes_: np.ndarray
+    positive_class: str
 
     def predict_proba(self, texts: Sequence[str]) -> np.ndarray:
-        scores = unsafe_scores(self.base_model, texts)
+        scores = positive_scores(self.base_model, texts, self.positive_class)
         if self.calibration_method == "sigmoid":
-            unsafe = self.calibration_model.predict_proba(scores.reshape(-1, 1))[:, 1]
+            positive = self.calibration_model.predict_proba(scores.reshape(-1, 1))[:, 1]
         else:
-            unsafe = self.calibration_model.predict(scores)
-        unsafe = np.clip(unsafe, 0.0, 1.0)
-        return np.column_stack((1.0 - unsafe, unsafe))
+            positive = self.calibration_model.predict(scores)
+        positive = np.clip(positive, 0.0, 1.0)
+        negative = 1.0 - positive
+        return (
+            np.column_stack((negative, positive))
+            if self.classes_[1] == self.positive_class
+            else np.column_stack((positive, negative))
+        )
 
     def predict(self, texts: Sequence[str]) -> np.ndarray:
-        return np.where(self.predict_proba(texts)[:, 1] >= 0.5, "unsafe", "safe")
+        probabilities = self.predict_proba(texts)
+        return self.classes_[np.argmax(probabilities, axis=1)]

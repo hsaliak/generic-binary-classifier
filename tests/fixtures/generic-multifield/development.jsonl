@@ -1,0 +1,12 @@
+{"id":"dev-01","inputs":{"user_context":"project alpha 1","assistant_text":"allow inspect alpha 1"},"label":"allow","family":"alpha","batch_id":"alpha"}
+{"id":"dev-02","inputs":{"user_context":"project alpha 2","assistant_text":"block delete alpha 2"},"label":"block","family":"alpha","batch_id":"alpha"}
+{"id":"dev-03","inputs":{"user_context":"project beta 1","assistant_text":"allow inspect beta 1"},"label":"allow","family":"beta","batch_id":"beta"}
+{"id":"dev-04","inputs":{"user_context":"project beta 2","assistant_text":"block delete beta 2"},"label":"block","family":"beta","batch_id":"beta"}
+{"id":"dev-05","inputs":{"user_context":"project gamma 1","assistant_text":"allow inspect gamma 1"},"label":"allow","family":"gamma","batch_id":"gamma"}
+{"id":"dev-06","inputs":{"user_context":"project gamma 2","assistant_text":"block delete gamma 2"},"label":"block","family":"gamma","batch_id":"gamma"}
+{"id":"dev-07","inputs":{"user_context":"project delta 1","assistant_text":"allow inspect delta 1"},"label":"allow","family":"delta","batch_id":"delta"}
+{"id":"dev-08","inputs":{"user_context":"project delta 2","assistant_text":"block delete delta 2"},"label":"block","family":"delta","batch_id":"delta"}
+{"id":"dev-09","inputs":{"user_context":"project epsilon 1","assistant_text":"allow inspect epsilon 1"},"label":"allow","family":"epsilon","batch_id":"epsilon"}
+{"id":"dev-10","inputs":{"user_context":"project epsilon 2","assistant_text":"block delete epsilon 2"},"label":"block","family":"epsilon","batch_id":"epsilon"}
+{"id":"dev-11","inputs":{"user_context":"project zeta 1","assistant_text":"allow inspect zeta 1"},"label":"allow","family":"zeta","batch_id":"zeta"}
+{"id":"dev-12","inputs":{"user_context":"project zeta 2","assistant_text":"block delete zeta 2"},"label":"block","family":"zeta","batch_id":"zeta"}

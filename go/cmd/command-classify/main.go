@@ -32,20 +32,26 @@ type Calibration struct {
 	Y           []float64 `json:"y_thresholds"`
 }
 type Policy struct {
-	Threshold float64   `json:"unsafe_probability_threshold"`
+	Threshold float64   `json:"positive_probability_threshold"`
 	Review    []float64 `json:"review_probability_range"`
 }
+type Input struct {
+	Fields []string `json:"fields"`
+}
 type Bundle struct {
-	Format      int         `json:"format_version"`
-	Version     string      `json:"model_version"`
-	Labels      []string    `json:"labels"`
-	Positive    string      `json:"positive_class"`
-	Word        Feature     `json:"word"`
-	Char        Feature     `json:"char"`
-	Coef        [][]float64 `json:"coefficients"`
-	Intercept   []float64   `json:"intercept"`
-	Calibration Calibration `json:"calibration"`
-	Policy      Policy      `json:"decision_policy"`
+	Format      int               `json:"format_version"`
+	Version     string            `json:"model_version"`
+	Task        map[string]string `json:"task"`
+	Labels      []string          `json:"labels"`
+	Positive    string            `json:"positive_class"`
+	Probability string            `json:"positive_probability_field"`
+	Input       Input             `json:"input"`
+	Word        Feature           `json:"word"`
+	Char        Feature           `json:"char"`
+	Coef        [][]float64       `json:"coefficients"`
+	Intercept   []float64         `json:"intercept"`
+	Calibration Calibration       `json:"calibration"`
+	Policy      Policy            `json:"decision_policy"`
 }
 
 func verify(path string) ([]byte, error) {
@@ -77,7 +83,10 @@ func load(path string) (Bundle, error) {
 	if e != nil {
 		return b, e
 	}
-	if b.Format != 2 || len(b.Labels) != 2 || b.Labels[0] != "safe" || b.Labels[1] != "unsafe" || b.Positive != "unsafe" || len(b.Coef) != 1 || len(b.Intercept) != 1 || len(b.Policy.Review) != 2 {
+	if b.Format != 3 || len(b.Labels) != 2 || b.Positive == "" || b.Probability == "" || len(b.Input.Fields) == 0 || len(b.Coef) != 1 || len(b.Intercept) != 1 || len(b.Policy.Review) != 2 {
+		return b, errors.New("unsupported artifact contract")
+	}
+	if b.Positive != b.Labels[0] && b.Positive != b.Labels[1] {
 		return b, errors.New("unsupported artifact contract")
 	}
 	return b, nil
@@ -187,20 +196,52 @@ func classify(b Bundle, text string) (map[string]any, error) {
 	if math.IsNaN(p) || p < 0 || p > 1 {
 		return nil, errors.New("invalid calibration")
 	}
-	label := "safe"
-	if p >= b.Policy.Threshold {
-		label = "unsafe"
+	label := b.Labels[0]
+	if label == b.Positive {
+		label = b.Labels[1]
 	}
-	return map[string]any{"label": label, "unsafe_probability": p, "confidence": p, "review_recommended": p >= b.Policy.Review[0] && p <= b.Policy.Review[1], "model_version": b.Version}, nil
+	if p >= b.Policy.Threshold {
+		label = b.Positive
+	}
+	return map[string]any{"label": label, b.Probability: p, "confidence": p, "review_recommended": p >= b.Policy.Review[0] && p <= b.Policy.Review[1], "model_version": b.Version, "task": b.Task}, nil
 }
 func main() {
 	model := flag.String("model", "model.json", "")
 	text := flag.String("text", "", "")
+	inputJSON := flag.String("input-json", "", "")
 	flag.Parse()
 	b, e := load(*model)
 	if e == nil {
+		input := *text
+		if (*text == "") == (*inputJSON == "") {
+			e = errors.New("provide exactly one of --text or --input-json")
+		} else if *inputJSON != "" {
+			var values map[string]string
+			if e = json.Unmarshal([]byte(*inputJSON), &values); e == nil {
+				if len(values) != len(b.Input.Fields) {
+					e = errors.New("input fields do not match artifact")
+				} else {
+					parts := make([]string, len(b.Input.Fields))
+					for i, field := range b.Input.Fields {
+						value, ok := values[field]
+						if !ok || strings.TrimSpace(value) == "" {
+							e = errors.New("input fields do not match artifact")
+							break
+						}
+						if len(b.Input.Fields) == 1 {
+							parts[i] = strings.TrimSpace(value)
+						} else {
+							parts[i] = "<" + strings.ToUpper(field) + ">\n" + strings.TrimSpace(value)
+						}
+					}
+					input = strings.Join(parts, "\n\n")
+				}
+			}
+		}
 		var out map[string]any
-		out, e = classify(b, *text)
+		if e == nil {
+			out, e = classify(b, input)
+		}
 		if e == nil {
 			e = json.NewEncoder(os.Stdout).Encode(out)
 		}
