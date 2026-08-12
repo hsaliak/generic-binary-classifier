@@ -17,7 +17,11 @@ class GenerationError(ValueError):
 
 
 def generation_command(
-    manifest: Path, backend: str, batch: str, focus: str
+    manifest: Path,
+    backend: str,
+    batch: str,
+    focus: str,
+    model: str | None = None,
 ) -> tuple[list[str], str, Path]:
     """Build a non-executing backend command and raw-output destination."""
     load_task_definition(manifest)
@@ -39,11 +43,11 @@ def generation_command(
     )
     output = Path(raw["data"]["raw_directory"]) / f"{backend}-batch-{batch}.raw"
     if backend == "std_slop":
-        model = raw["generation"].get("model")
-        if not isinstance(model, str) or not model:
-            raise GenerationError("std_slop generation.model must be non-empty")
+        resolved = model if model is not None else raw["generation"].get("model")
+        if not isinstance(resolved, str) or not resolved:
+            raise GenerationError("std_slop model must be non-empty")
         return (
-            ["std_slop", "--model", model, "--prompt", request, "--output", "json"],
+            ["std_slop", "--model", resolved, "--prompt", request, "--output", "json"],
             request,
             output,
         )
@@ -56,10 +60,11 @@ def main() -> None:
     parser.add_argument("--backend", required=True)
     parser.add_argument("--batch", required=True)
     parser.add_argument("--focus", required=True)
+    parser.add_argument("--model", default=None, help="Override the std_slop model.")
     args = parser.parse_args()
     try:
         command, _, output = generation_command(
-            args.task, args.backend, args.batch, args.focus
+            args.task, args.backend, args.batch, args.focus, args.model
         )
         output.parent.mkdir(parents=True, exist_ok=True)
         completed = subprocess.run(command, check=True, capture_output=True, text=True)

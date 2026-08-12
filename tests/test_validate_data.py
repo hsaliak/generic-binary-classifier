@@ -5,10 +5,13 @@ import pytest
 
 from commandclassifier.validate_data import (
     RecordValidationError,
+    load_record_contract,
     normalize_text,
     read_jsonl,
     validate_record,
 )
+
+CONTRACT = load_record_contract(Path("tasks/command-safety-v1.yaml"))
 
 
 def valid_record(**overrides):
@@ -30,8 +33,18 @@ def valid_record(**overrides):
     return record
 
 
+def test_contract_derives_command_safety_record_shape():
+    assert CONTRACT.labels == frozenset({"safe", "unsafe"})
+    assert "risk_reasons" in CONTRACT.array_string_fields
+    assert "shell" in CONTRACT.string_enum_fields
+    assert "platform" in CONTRACT.array_enum_fields
+    assert "context_required" in CONTRACT.boolean_fields
+
+
 def test_validate_record_normalizes_text_and_platforms():
-    actual = validate_record(valid_record(platform=["macos", "linux", "linux"]))
+    actual = validate_record(
+        valid_record(platform=["macos", "linux", "linux"]), CONTRACT
+    )
 
     assert actual["text"] == "ls -la"
     assert actual["platform"] == ["linux", "macos"]
@@ -44,15 +57,16 @@ def test_normalize_text_preserves_meaningful_internal_whitespace():
 @pytest.mark.parametrize(
     ("overrides", "message"),
     [
-        ({"label": "unsure"}, "label must be safe or unsafe"),
+        ({"label": "unsure"}, "label must be one of"),
         ({"platform": ["windows"]}, "platform must be a non-empty list"),
         ({"context_required": "false"}, "context_required must be boolean"),
         ({"risk_reasons": ["", "deletes_files"]}, "risk_reasons must be a list"),
+        ({"unexpected_field": "x"}, "unexpected fields"),
     ],
 )
 def test_validate_record_rejects_invalid_contract(overrides, message):
     with pytest.raises(RecordValidationError, match=message):
-        validate_record(valid_record(**overrides))
+        validate_record(valid_record(**overrides), CONTRACT)
 
 
 def test_read_jsonl_rejects_normalized_duplicates(tmp_path: Path):
@@ -68,4 +82,4 @@ def test_read_jsonl_rejects_normalized_duplicates(tmp_path: Path):
     )
 
     with pytest.raises(RecordValidationError, match="duplicate normalized text"):
-        read_jsonl(dataset)
+        read_jsonl(dataset, CONTRACT)

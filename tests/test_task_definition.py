@@ -17,6 +17,15 @@ def test_load_command_safety_task_definition():
     assert task.positive_class == "unsafe"
 
 
+def test_prompt_complexity_task_definition_has_binary_v3_contract():
+    task = load_task_definition(Path("tasks/prompt-complexity-v1.yaml"))
+
+    assert task.model_version == "prompt-complexity-v1"
+    assert task.labels == ("low_complexity", "high_complexity")
+    assert task.positive_class == "high_complexity"
+    assert task.input_fields == ("text",)
+
+
 def test_fixture_multifield_task_has_binary_v3_inputs():
     task = load_task_definition(Path("tests/fixtures/generic-multifield/task.yaml"))
 

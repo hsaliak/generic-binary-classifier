@@ -1,0 +1,28 @@
+task_id: prompt-complexity
+task_version: v1
+input:
+  fields: [text]
+labels:
+  values: [low_complexity, high_complexity]
+  positive_class: high_complexity
+data:
+  record_schema: schemas/prompt-complexity-record-v1.json
+  prompt: prompts/prompt-complexity-v1.md
+  raw_directory: data/prompt-complexity/raw
+  processed_dataset: data/prompt-complexity/processed/development.jsonl
+  locked_evaluation: data/prompt-complexity/reviewed/locked-eval-v1.jsonl
+  split_group_fields: [family, batch_id]
+generation:
+  backend: std_slop
+  model: deepseek/deepseek-v4-flash-0731:high
+model:
+  feature_profile: word_and_character_tfidf
+  estimator: logistic_regression
+  random_seed: 20250812
+evaluation:
+  outer_folds: 5
+  inner_folds: 3
+  primary_metric: positive_recall
+decision_policy:
+  positive_probability_threshold: 0.50
+  review_probability_range: [0.20, 0.90]

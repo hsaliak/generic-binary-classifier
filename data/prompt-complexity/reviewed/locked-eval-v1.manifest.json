@@ -1,0 +1,18 @@
+{
+  "dataset": "locked-eval-v1.jsonl",
+  "dataset_sha256": "19b488a35fbc713502482529cd53488ee20856062917ce9cee851df98facdcf7",
+  "task_id": "prompt-complexity",
+  "task_version": "v1",
+  "records": 129,
+  "source": "synthetic",
+  "generator": "std_slop",
+  "generator_model": "deepseek/deepseek-v4-flash-0731:high",
+  "review_status": "reviewed",
+  "reviewed_by": "framework-automated-review",
+  "usage": "locked evaluation only; never train or tune against this dataset",
+  "known_limitations": [
+    "Synthetic source only",
+    "Same broad generator family as development data; interpret scores conservatively",
+    "129 records; report uncertainty and do not use as sole enforcement evidence"
+  ]
+}

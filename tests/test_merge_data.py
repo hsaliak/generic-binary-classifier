@@ -3,7 +3,13 @@ from pathlib import Path
 import pytest
 
 from commandclassifier.merge_data import merge_batches
-from commandclassifier.validate_data import RecordValidationError, write_jsonl
+from commandclassifier.validate_data import (
+    RecordValidationError,
+    load_record_contract,
+    write_jsonl,
+)
+
+CONTRACT = load_record_contract(Path("tasks/command-safety-v1.yaml"))
 
 
 def record(record_id: str, text: str, label: str):
@@ -28,7 +34,7 @@ def test_merge_deduplicates_same_label_and_rebases_identifiers(tmp_path: Path):
     write_jsonl([record("one", "pwd", "safe")], first)
     write_jsonl([record("two", " pwd ", "safe")], second)
 
-    merged = merge_batches([first, second])
+    merged = merge_batches([first, second], CONTRACT)
 
     assert len(merged) == 1
     assert merged[0]["id"] == "one:one"
@@ -41,4 +47,4 @@ def test_merge_rejects_conflicting_duplicate_labels(tmp_path: Path):
     write_jsonl([record("two", "pwd", "unsafe")], second)
 
     with pytest.raises(RecordValidationError, match="conflicting labels"):
-        merge_batches([first, second])
+        merge_batches([first, second], CONTRACT)

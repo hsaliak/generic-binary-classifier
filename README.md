@@ -18,18 +18,48 @@ The artifact (`model.json` plus `model.json.sha256`; Python also writes `model.j
 
 ## Quick start
 
-Requirements: Python 3.11+, Go, and `make`.
+Requirements: Python 3.11+, Go, and `make`. Set up and verify the environment once:
 
 ```bash
 make setup
 make quality
 make test
-make train
-make infer TEXT='git status'
-make go-infer TEXT='git status'
 ```
 
-The included `command-safety-v1` task classifies shell-command text as `safe` or `unsafe` (`unsafe` is positive). Its result is advisory only: a `safe` result is not permission to run a command, and the classifier never runs it. `make train` requires a reviewed, hash-bound locked-evaluation manifest and rejects development/evaluation input overlap before writing an artifact.
+The repository ships two classifiers, each with its own manifest, reviewed datasets, and artifact:
+
+- `command-safety-v1` — classifies shell-command text as `safe` or `unsafe` (`unsafe` is positive). Advisory only: a `safe` result is not permission to run a command, and the classifier never runs it.
+- `prompt-complexity-v1` — classifies a user prompt to an LLM as `low_complexity` or `high_complexity` (`high_complexity` is positive). Terse continuations such as `continue` and `proceed` are low-complexity by design.
+
+Both use the same v3 artifact contract and run identically in Python and Go. `make infer`/`make go-infer` point at an artifact via `ARTIFACT_DIR`; `make train` points at a task via `ARTIFACT_DIR`, `MANIFEST`, `DATASET`, and `EVALUATION`.
+
+### Train a classifier
+
+`make train` requires a reviewed, hash-bound locked-evaluation manifest and rejects development/evaluation input overlap before writing an artifact. The default targets command-safety:
+
+```bash
+make train                             # command-safety (default)
+
+make train \
+  ARTIFACT_DIR=artifacts/prompt-complexity-v1 \
+  MANIFEST=tasks/prompt-complexity-v1.yaml \
+  DATASET=data/prompt-complexity/processed/development.jsonl \
+  EVALUATION=data/prompt-complexity/reviewed/locked-eval-v1.jsonl   # prompt-complexity
+```
+
+### Infer on either classifier
+
+```bash
+# command-safety (default artifact)
+make infer TEXT='git status'
+make go-infer TEXT='git status'
+
+# prompt-complexity
+make infer ARTIFACT_DIR=artifacts/prompt-complexity-v1 TEXT='continue'
+make go-infer ARTIFACT_DIR=artifacts/prompt-complexity-v1 TEXT='continue'
+```
+
+The Python and Go commands load the same artifact, verify its hash and contract, and produce identical `label`, `positive_probability`, `confidence`, `review_recommended`, and `model_version` output.
 
 ## Codebase layout
 
@@ -48,4 +78,5 @@ tests/                   Python unit and property test suite
 
 - [Framework details](docs/details.md) — task definition, full commands, release checklist
 - [Task creation guide](docs/task-creation/SKILL.md) — how to add a new task
-- [Model card](docs/model-card.md), [release criteria](docs/release-criteria.md), and [external evaluation evidence](docs/external-evaluation-evidence.md) for the included task
+- [Command-safety model card](docs/model-card.md) and [release criteria](docs/release-criteria.md)
+- [Prompt-complexity model card](docs/prompt-complexity-model-card.md) and [release criteria](docs/prompt-complexity-release-criteria.md)

@@ -32,7 +32,7 @@ Start from the command-safety task, but do not copy command-specific labels, fie
 
 ## Define the task manifest
 
-The future generic manifest must define:
+The manifest must define, with a record schema referenced under `data.record_schema` (mandatory — `validate_data` derives the record contract from it):
 
 ```yaml
 task_id: example-task
@@ -101,6 +101,8 @@ The prompt must define:
 
 Generate focused batches, not one broad undirected corpus. Include safe/negative near-neighbours for positive examples.
 
+`std_slop` generation accepts a `--model` override that takes precedence over `generation.model` in the manifest. Use `MODEL=<name>` with `make generate` for one-off model selection.
+
 ## Generate raw data
 
 The generic generator interface should accept `TASK`, `BACKEND`, `BATCH`, and `FOCUS`.
@@ -119,9 +121,9 @@ make generate TASK=tasks/example-task-v1.yaml \
 
 ## Validate, review, and lock data
 
-1. Validate each raw extracted batch.
-2. Review labels, rationale, inputs, and metadata.
-3. Merge reviewed development batches; reject duplicate normalized inputs and conflicting labels.
+1. Validate each raw extracted batch with `validate_data --manifest <task-manifest>`; record shape is checked against the task's record schema contract.
+2. Review labels, rationale, inputs, and metadata; fix generated records that deviate from the contract (for example, missing metadata fields or typo'd keys) before merging.
+3. Merge reviewed development batches with `merge_data --manifest <task-manifest>`; reject duplicate normalized inputs and conflicting labels.
 4. Create a separate reviewed locked evaluation set.
 5. Run overlap detection before training.
 6. Store reviewed manifests with record count, source provenance, reviewer, review date, and SHA-256 hash.

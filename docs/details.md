@@ -23,11 +23,11 @@ The current framework supports only binary text classification with one output a
 
 Generated records are candidate material, not trusted training data. Human review is required before data enters development or locked evaluation.
 
-## Included task: dangerous command classification
+## Included tasks
 
-`command-safety-v1` is the included task. It classifies Linux and macOS shell-command text as `safe` or `unsafe`; `unsafe` is the positive class.
+`command-safety-v1` classifies Linux and macOS shell-command text as `safe` or `unsafe`; `unsafe` is the positive class. The result is advisory only: a `safe` result is not permission to run a command, and the classifier never runs the command. See the [model card](model-card.md) and [release criteria](release-criteria.md).
 
-The result is advisory only. A `safe` result is not permission to run a command. The classifier never runs the command. See the [model card](model-card.md), [release criteria](release-criteria.md), and [external evaluation evidence](external-evaluation-evidence.md).
+`prompt-complexity-v1` classifies a user prompt to an LLM as `low_complexity` or `high_complexity` (`high_complexity` is positive). Terse continuations such as `continue` and `proceed` are low-complexity by design; a prompt that opens with a continuation word but adds new multi-step work is high-complexity. See the [model card](prompt-complexity-model-card.md) and [release criteria](prompt-complexity-release-criteria.md).
 
 Command-safety inference accepts one field:
 
@@ -41,7 +41,7 @@ The result includes `label`, `positive_probability`, `confidence`, `review_recom
 
 ## Create a new task
 
-Start with `templates/binary-task/` and use the working multi-field reference in `tests/fixtures/generic-multifield/`.
+Start with `templates/binary-task/` and use the working references in `tests/fixtures/generic-multifield/` (multi-field) and `tests/fixtures/generic-positive-first/` (single-field with positive-first label order).
 
 Create a manifest, prompt, schema, raw-data directory, reviewed development dataset, reviewed locked-evaluation dataset, model card, and release criteria. A minimal multi-field manifest is:
 
@@ -64,6 +64,10 @@ generation:
 ```
 
 All configured fields must be present and non-empty. IDs and canonical serialized inputs must be unique. Keep development and locked evaluation disjoint.
+
+Record validation is contract-driven: `validate_data` loads the task manifest and its `record_schema` JSON Schema file, and every runtime check is derived from that contract (labels from the manifest, required/typed/enumerated fields from the schema).
+
+Generation's `std_slop` backend accepts a `--model` override (Makefile: `MODEL=...`) that takes precedence over `generation.model` in the manifest.
 
 ## Generate and review candidate material
 

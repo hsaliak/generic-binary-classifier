@@ -1,0 +1,10 @@
+{"id":"dev-01","text":"inspect alpha simple fast","label":"low_complexity","family":"alpha","batch_id":"alpha"}
+{"id":"dev-02","text":"plan alpha complex multi step","label":"high_complexity","family":"alpha","batch_id":"alpha"}
+{"id":"dev-03","text":"inspect beta simple fast","label":"low_complexity","family":"beta","batch_id":"beta"}
+{"id":"dev-04","text":"plan beta complex multi step","label":"high_complexity","family":"beta","batch_id":"beta"}
+{"id":"dev-05","text":"inspect gamma simple fast","label":"low_complexity","family":"gamma","batch_id":"gamma"}
+{"id":"dev-06","text":"plan gamma complex multi step","label":"high_complexity","family":"gamma","batch_id":"gamma"}
+{"id":"dev-07","text":"inspect delta simple fast","label":"low_complexity","family":"delta","batch_id":"delta"}
+{"id":"dev-08","text":"plan delta complex multi step","label":"high_complexity","family":"delta","batch_id":"delta"}
+{"id":"dev-09","text":"inspect epsilon simple fast","label":"low_complexity","family":"epsilon","batch_id":"epsilon"}
+{"id":"dev-10","text":"plan epsilon complex multi step","label":"high_complexity","family":"epsilon","batch_id":"epsilon"}

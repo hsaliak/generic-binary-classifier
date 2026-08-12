@@ -7,19 +7,23 @@ import json
 from pathlib import Path
 
 from commandclassifier.validate_data import (
+    RecordContract,
     RecordValidationError,
+    load_record_contract,
     read_jsonl,
     write_jsonl,
 )
 
 
-def merge_batches(paths: list[Path]) -> list[dict[str, object]]:
-    """Validate batches, rebase IDs, and reject duplicate normalized commands."""
+def merge_batches(
+    paths: list[Path], contract: RecordContract
+) -> list[dict[str, object]]:
+    """Validate batches, rebase IDs, and reject duplicate normalized inputs."""
     merged: list[dict[str, object]] = []
     texts: dict[str, str] = {}
     for path in paths:
         batch_id = path.stem
-        for record in read_jsonl(path):
+        for record in read_jsonl(path, contract):
             prior_label = texts.get(record["text"])
             if prior_label is not None:
                 if prior_label != record["label"]:
@@ -39,13 +43,13 @@ def merge_batches(paths: list[Path]) -> list[dict[str, object]]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Merge command-classifier JSONL batches."
-    )
+    parser = argparse.ArgumentParser(description="Merge task JSONL batches.")
+    parser.add_argument("--manifest", required=True, type=Path)
     parser.add_argument("--input", required=True, type=Path, nargs="+")
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
-    records = merge_batches(args.input)
+    contract = load_record_contract(args.manifest)
+    records = merge_batches(args.input, contract)
     write_jsonl(records, args.output)
     print(json.dumps({"records": len(records), "output": str(args.output)}))
 

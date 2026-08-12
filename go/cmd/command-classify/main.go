@@ -192,6 +192,12 @@ func classify(b Bundle, text string) (map[string]any, error) {
 	for i, v := range cv {
 		score += b.Coef[0][off+i] * v
 	}
+	// sklearn decision scores are oriented to the second class in sorted order;
+	// the exported calibration is fit on positive-oriented scores. Mirror Python's
+	// positive_scores() so the same calibration input is used for any label order.
+	if len(b.Labels) == 2 && b.Labels[0] == b.Positive {
+		score = -score
+	}
 	p := calibrate(b.Calibration, score)
 	if math.IsNaN(p) || p < 0 || p > 1 {
 		return nil, errors.New("invalid calibration")
