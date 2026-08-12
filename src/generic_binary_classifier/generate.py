@@ -9,7 +9,7 @@ from pathlib import Path
 
 import yaml
 
-from commandclassifier.task_definition import load_task_definition
+from generic_binary_classifier.task_definition import load_task_definition
 
 
 class GenerationError(ValueError):

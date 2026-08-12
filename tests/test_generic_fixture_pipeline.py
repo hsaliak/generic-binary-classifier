@@ -13,7 +13,7 @@ def test_multifield_fixture_trains_and_exports_v3(tmp_path: Path):
         [
             sys.executable,
             "-m",
-            "commandclassifier.train",
+            "generic_binary_classifier.train",
             "--manifest",
             str(fixture / "task.yaml"),
             "--input",
@@ -37,7 +37,7 @@ def test_multifield_fixture_trains_and_exports_v3(tmp_path: Path):
         [
             sys.executable,
             "-m",
-            "commandclassifier.cli",
+            "generic_binary_classifier.cli",
             "--artifact-dir",
             str(artifact_dir),
             "--input-json",
@@ -51,7 +51,7 @@ def test_multifield_fixture_trains_and_exports_v3(tmp_path: Path):
         [
             "go",
             "run",
-            "./cmd/command-classify",
+            "./cmd/generic-binclass",
             "--model",
             str(artifact_dir / "model.json"),
             "--input-json",

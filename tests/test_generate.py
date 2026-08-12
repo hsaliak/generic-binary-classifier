@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from commandclassifier.generate import GenerationError, generation_command
+from generic_binary_classifier.generate import GenerationError, generation_command
 
 
 def write_task(tmp_path: Path, backend: str) -> Path:

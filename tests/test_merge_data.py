@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from commandclassifier.merge_data import merge_batches
-from commandclassifier.validate_data import (
+from generic_binary_classifier.merge_data import merge_batches
+from generic_binary_classifier.validate_data import (
     RecordValidationError,
     load_record_contract,
     write_jsonl,

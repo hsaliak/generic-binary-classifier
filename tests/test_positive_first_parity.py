@@ -15,7 +15,7 @@ def test_positive_first_label_order_python_go_parity(tmp_path: Path):
         [
             sys.executable,
             "-m",
-            "commandclassifier.train",
+            "generic_binary_classifier.train",
             "--manifest",
             str(fixture / "task.yaml"),
             "--input",
@@ -39,7 +39,7 @@ def test_positive_first_label_order_python_go_parity(tmp_path: Path):
             [
                 sys.executable,
                 "-m",
-                "commandclassifier.cli",
+                "generic_binary_classifier.cli",
                 "--artifact-dir",
                 str(artifact_dir),
                 "--text",
@@ -53,7 +53,7 @@ def test_positive_first_label_order_python_go_parity(tmp_path: Path):
             [
                 "go",
                 "run",
-                "./cmd/command-classify",
+                "./cmd/generic-binclass",
                 "--model",
                 str(artifact_dir / "model.json"),
                 "--text",

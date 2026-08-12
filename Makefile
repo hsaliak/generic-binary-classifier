@@ -11,7 +11,7 @@ TASK ?= $(MANIFEST)
 BACKEND ?= std_slop
 BATCH ?= 001
 FOCUS ?= balanced Linux and macOS command safety examples
-SESSION ?= commandclassifier-batch-$(BATCH)
+SESSION ?= gbc-batch-$(BATCH)
 GO_ARTIFACT ?= $(ARTIFACT_DIR)/model.json
 GO_BIN ?= $(CURDIR)/bin
 
@@ -27,7 +27,7 @@ help:
 	  'make quality                       Check Python formatting and lint rules.' \
 	  'make go-test                       Run Go unit tests.' \
 	  'make go-infer TEXT=<command>        Classify with the portable Go artifact.' \
-	  'make go-install                     Install command-classify to ./bin.' \
+	  'make go-install                     Install generic-binclass to ./bin.' \
 	  'make infer TEXT=<command>           Classify without executing TEXT.'
 
 setup:
@@ -36,16 +36,16 @@ setup:
 	$(PIP) install -e '.[test]'
 
 validate-data:
-	$(PY) -m commandclassifier.validate_data --manifest $(MANIFEST) --input $(DATASET)
+	$(PY) -m generic_binary_classifier.validate_data --manifest $(MANIFEST) --input $(DATASET)
 
 corpus-report:
-	$(PY) -m commandclassifier.corpus_report --manifest $(MANIFEST) --development $(DATASET) --evaluation $(EVALUATION) --output reports/corpus-report.json
+	$(PY) -m generic_binary_classifier.corpus_report --manifest $(MANIFEST) --development $(DATASET) --evaluation $(EVALUATION) --output reports/corpus-report.json
 
 generate:
-	$(PY) -m commandclassifier.generate --task $(TASK) --backend $(BACKEND) --batch $(BATCH) --focus '$(FOCUS)' --model '$(MODEL)'
+	$(PY) -m generic_binary_classifier.generate --task $(TASK) --backend $(BACKEND) --batch $(BATCH) --focus '$(FOCUS)' --model '$(MODEL)'
 
 train:
-	$(PY) -m commandclassifier.train --manifest $(MANIFEST) --input $(DATASET) --evaluation $(EVALUATION) --artifact-dir $(ARTIFACT_DIR)
+	$(PY) -m generic_binary_classifier.train --manifest $(MANIFEST) --input $(DATASET) --evaluation $(EVALUATION) --artifact-dir $(ARTIFACT_DIR)
 
 test:
 	$(PY) -m pytest
@@ -58,14 +58,14 @@ go-test:
 	cd go && go test ./...
 
 go-infer:
-	cd go && go run ./cmd/command-classify --model ../$(GO_ARTIFACT) --text '$(TEXT)'
+	cd go && go run ./cmd/generic-binclass --model ../$(GO_ARTIFACT) --text '$(TEXT)'
 
 go-install:
 	@mkdir -p $(GO_BIN)
-	cd go && GOBIN=$(GO_BIN) go install ./cmd/command-classify
+	cd go && GOBIN=$(GO_BIN) go install ./cmd/generic-binclass
 
 infer:
-	$(PY) -m commandclassifier.cli --artifact-dir $(ARTIFACT_DIR) --text '$(TEXT)'
+	$(PY) -m generic_binary_classifier.cli --artifact-dir $(ARTIFACT_DIR) --text '$(TEXT)'
 
 clean:
 	rm -rf .venv .pytest_cache build dist

@@ -21,11 +21,15 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import StratifiedGroupKFold, cross_val_predict
 
-from commandclassifier.corpus_report import build_report
-from commandclassifier.export_model import export_model
-from commandclassifier.model import RANDOM_SEED, CalibratedTextClassifier, pipeline
-from commandclassifier.task_definition import load_task_definition
-from commandclassifier.task_records import read_task_jsonl
+from generic_binary_classifier.corpus_report import build_report
+from generic_binary_classifier.export_model import export_model
+from generic_binary_classifier.model import (
+    RANDOM_SEED,
+    CalibratedTextClassifier,
+    pipeline,
+)
+from generic_binary_classifier.task_definition import load_task_definition
+from generic_binary_classifier.task_records import read_task_jsonl
 
 CALIBRATION_METHODS = ("sigmoid", "isotonic")
 

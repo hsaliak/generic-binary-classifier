@@ -64,7 +64,7 @@ The Python and Go commands load the same artifact, verify its hash and contract,
 ## Codebase layout
 
 ```text
-src/commandclassifier/   Python pipeline and CLI (generate, validate, merge, train, export, infer)
+src/generic_binary_classifier/   Python pipeline and CLI (generate, validate, merge, train, export, infer)
 go/                      Go inference runtime using the same v3 artifact
 templates/binary-task/   Scaffolding for a new task
 tasks/ prompts/ schemas/ Per-task manifests, generation prompts, record schemas

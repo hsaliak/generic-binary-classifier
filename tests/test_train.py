@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from commandclassifier.train import (
+from generic_binary_classifier.train import (
     grouped_splits,
     groups_for,
     train_and_report,

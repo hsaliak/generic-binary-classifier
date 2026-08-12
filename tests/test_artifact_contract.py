@@ -6,7 +6,7 @@ import joblib
 import numpy as np
 import pytest
 
-from commandclassifier.cli import classify, load_artifact
+from generic_binary_classifier.cli import classify, load_artifact
 
 
 class FakeModel:

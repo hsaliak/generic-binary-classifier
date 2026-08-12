@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from commandclassifier.validate_data import (
+from generic_binary_classifier.validate_data import (
     RecordContract,
     RecordValidationError,
     load_record_contract,

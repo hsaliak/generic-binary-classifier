@@ -7,9 +7,12 @@ import hashlib
 import json
 from pathlib import Path
 
-from commandclassifier.task_definition import TaskDefinition, load_task_definition
-from commandclassifier.task_records import read_task_jsonl
-from commandclassifier.validate_data import (
+from generic_binary_classifier.task_definition import (
+    TaskDefinition,
+    load_task_definition,
+)
+from generic_binary_classifier.task_records import read_task_jsonl
+from generic_binary_classifier.validate_data import (
     RecordContract,
     load_record_contract,
     read_jsonl,

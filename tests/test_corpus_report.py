@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from commandclassifier.corpus_report import build_report
-from commandclassifier.validate_data import load_record_contract, write_jsonl
+from generic_binary_classifier.corpus_report import build_report
+from generic_binary_classifier.validate_data import load_record_contract, write_jsonl
 
 CONTRACT = load_record_contract(Path("tasks/command-safety-v1.yaml"))
 

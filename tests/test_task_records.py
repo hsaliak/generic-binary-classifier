@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 
-from commandclassifier.task_definition import load_task_definition
-from commandclassifier.task_records import read_task_jsonl, serialize_record
-from commandclassifier.validate_data import RecordValidationError
+from generic_binary_classifier.task_definition import load_task_definition
+from generic_binary_classifier.task_records import read_task_jsonl, serialize_record
+from generic_binary_classifier.validate_data import RecordValidationError
 
 
 def task():
