@@ -20,21 +20,14 @@ jobs:
       - name: Python quality and tests
         run: make quality && make test
       - name: Corpus separation
-        run: >-
-          make corpus-report &&
+        run: |
           make corpus-report
-            MANIFEST=tasks/prompt-complexity-v1.yaml
-            DATASET=data/prompt-complexity/processed/development.jsonl
-            EVALUATION=data/prompt-complexity/reviewed/locked-eval-v1.jsonl
+          make corpus-report MANIFEST=tasks/prompt-complexity-v1.yaml DATASET=data/prompt-complexity/processed/development.jsonl EVALUATION=data/prompt-complexity/reviewed/locked-eval-v1.jsonl
       - name: Reproducible training and Python artifact verification
-        run: >-
-          make train &&
-          make infer TEXT='git status' &&
+        run: |
           make train
-            MANIFEST=tasks/prompt-complexity-v1.yaml
-            DATASET=data/prompt-complexity/processed/development.jsonl
-            EVALUATION=data/prompt-complexity/reviewed/locked-eval-v1.jsonl
-            ARTIFACT_DIR=artifacts/prompt-complexity-v1 &&
+          make infer TEXT='git status'
+          make train MANIFEST=tasks/prompt-complexity-v1.yaml DATASET=data/prompt-complexity/processed/development.jsonl EVALUATION=data/prompt-complexity/reviewed/locked-eval-v1.jsonl ARTIFACT_DIR=artifacts/prompt-complexity-v1
           make infer ARTIFACT_DIR=artifacts/prompt-complexity-v1 TEXT='continue'
       - name: Go checks and bounded fuzzing
         run: >-
