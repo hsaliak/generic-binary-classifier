@@ -36,10 +36,10 @@ setup:
 	$(PIP) install -e '.[test]'
 
 validate-data:
-	$(PY) -m commandclassifier.validate_data --input $(DATASET)
+	$(PY) -m commandclassifier.validate_data --manifest $(MANIFEST) --input $(DATASET)
 
 corpus-report:
-	$(PY) -m commandclassifier.corpus_report --development $(DATASET) --evaluation $(EVALUATION) --output reports/corpus-report.json
+	$(PY) -m commandclassifier.corpus_report --manifest $(MANIFEST) --development $(DATASET) --evaluation $(EVALUATION) --output reports/corpus-report.json
 
 generate:
 	$(PY) -m commandclassifier.generate --task $(TASK) --backend $(BACKEND) --batch $(BATCH) --focus '$(FOCUS)' --model '$(MODEL)'
