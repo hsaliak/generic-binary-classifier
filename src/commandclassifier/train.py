@@ -1,4 +1,4 @@
-"""Train and evaluate a grouped, calibrated command-safety classifier."""
+"""Train and evaluate a grouped, calibrated binary text-classification task."""
 
 from __future__ import annotations
 

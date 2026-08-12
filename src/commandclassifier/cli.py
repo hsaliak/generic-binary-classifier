@@ -1,4 +1,4 @@
-"""Non-executing command safety inference CLI."""
+"""Non-executing generic binary classification inference CLI."""
 
 from __future__ import annotations
 
@@ -24,6 +24,8 @@ REQUIRED_BUNDLE_KEYS = frozenset(
         "normalization",
         "word",
         "char",
+        "coefficients",
+        "intercept",
         "calibration",
         "decision_policy",
     }

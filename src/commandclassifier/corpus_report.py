@@ -1,4 +1,4 @@
-"""Report corpus coverage and reject development/evaluation command overlap."""
+"""Report corpus coverage and reject development/evaluation input overlap."""
 
 from __future__ import annotations
 
@@ -63,15 +63,12 @@ def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--development", type=Path, required=True)
     p.add_argument("--evaluation", type=Path, required=True)
-    p.add_argument("--manifest", type=Path)
+    p.add_argument("--manifest", type=Path, required=True)
     p.add_argument("--output", type=Path)
     a = p.parse_args()
-    if a.manifest is not None:
-        task = load_task_definition(a.manifest)
-        contract = load_record_contract(a.manifest)
-        report = build_report(a.development, a.evaluation, task, contract)
-    else:
-        report = build_report(a.development, a.evaluation)
+    task = load_task_definition(a.manifest)
+    contract = load_record_contract(a.manifest)
+    report = build_report(a.development, a.evaluation, task, contract)
     if a.output:
         a.output.write_text(
             json.dumps(report, indent=2, sort_keys=True), encoding="utf-8"

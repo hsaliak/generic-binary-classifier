@@ -1,6 +1,6 @@
 # Reviewed Binary Text Classification Framework
 
-This is a  framework for building **reviewed synthetic binary text-classification tasks**: define a task once, generate and review its data, train a calibrated classifier, and ship a single portable artifact that runs identically in Python and Go.
+This is a framework for building **reviewed synthetic binary text-classification tasks**: define a task once, generate and review its data, train a calibrated classifier, and ship a single portable artifact that runs identically in Python and Go.
 The framework classifies text only. It never executes supplied text.
 
 ## What it does
