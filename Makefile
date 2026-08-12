@@ -21,7 +21,7 @@ help:
 	@printf '%s\n' \
 	  'make setup                         Create the Python environment and install test dependencies.' \
 	  'make validate-data DATASET=<path>  Validate and normalize JSONL records.' \
-	  'make generate TASK=<manifest> BACKEND=claude|std_slop BATCH=002 FOCUS=... Generate raw candidate material.' \
+	  'make generate TASK=<manifest> BACKEND=claude|std_slop BATCH=002 FOCUS=... MODEL=<model> Generate raw candidate material.' \
 	  'make train DATASET=<path>           Verify corpus separation, train, and export an artifact.' \
 	  'make test                          Run Python unit and property tests.' \
 	  'make quality                       Check Python formatting and lint rules.' \
@@ -42,7 +42,7 @@ corpus-report:
 	$(PY) -m commandclassifier.corpus_report --development $(DATASET) --evaluation $(EVALUATION) --output reports/corpus-report.json
 
 generate:
-	$(PY) -m commandclassifier.generate --task $(TASK) --backend $(BACKEND) --batch $(BATCH) --focus '$(FOCUS)'
+	$(PY) -m commandclassifier.generate --task $(TASK) --backend $(BACKEND) --batch $(BATCH) --focus '$(FOCUS)' --model '$(MODEL)'
 
 train:
 	$(PY) -m commandclassifier.train --manifest $(MANIFEST) --input $(DATASET) --evaluation $(EVALUATION) --artifact-dir $(ARTIFACT_DIR)

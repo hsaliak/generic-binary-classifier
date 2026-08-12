@@ -1,0 +1,24 @@
+task_id: generic-positive-first-fixture
+task_version: v1
+input:
+  fields: [text]
+labels:
+  values: [high_complexity, low_complexity]
+  positive_class: high_complexity
+data:
+  prompt: templates/binary-task/prompts/example-task-v1.md
+  raw_directory: tests/fixtures/generic-positive-first/raw
+  processed_dataset: tests/fixtures/generic-positive-first/development.jsonl
+  locked_evaluation: tests/fixtures/generic-positive-first/evaluation.jsonl
+  split_group_fields: [family, batch_id]
+generation:
+  backend: std_slop
+  model: fixture
+model:
+  random_seed: 7
+evaluation:
+  outer_folds: 3
+  inner_folds: 2
+decision_policy:
+  positive_probability_threshold: 0.5
+  review_probability_range: [0.2, 0.9]

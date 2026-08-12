@@ -1,7 +1,9 @@
 from pathlib import Path
 
 from commandclassifier.corpus_report import build_report
-from commandclassifier.validate_data import write_jsonl
+from commandclassifier.validate_data import load_record_contract, write_jsonl
+
+CONTRACT = load_record_contract(Path("tasks/command-safety-v1.yaml"))
 
 
 def record(record_id: str, text: str, label: str) -> dict[str, object]:
@@ -27,7 +29,7 @@ def test_build_report_binds_zero_overlap_result_to_input_hashes(tmp_path: Path):
     write_jsonl([record("development", "pwd", "safe")], development)
     write_jsonl([record("evaluation", "rm -f tmp", "unsafe")], evaluation)
 
-    report = build_report(development, evaluation)
+    report = build_report(development, evaluation, contract=CONTRACT)
 
     assert report["exact_text_overlap"] == []
     assert len(report["input_sha256"]["development"]) == 64
@@ -41,6 +43,6 @@ def test_build_report_detects_normalized_text_overlap(tmp_path: Path):
     write_jsonl([record("development", "pwd", "safe")], development)
     write_jsonl([record("evaluation", " pwd ", "safe")], evaluation)
 
-    report = build_report(development, evaluation)
+    report = build_report(development, evaluation, contract=CONTRACT)
 
     assert report["exact_text_overlap"] == ["pwd"]

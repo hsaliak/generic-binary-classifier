@@ -2,6 +2,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from commandclassifier.validate_data import normalize_text, validate_record
+from tests.test_validate_data import CONTRACT, valid_record
 
 command_texts = st.text(
     alphabet=st.characters(
@@ -21,23 +22,10 @@ def test_normalize_text_is_idempotent(text: str):
     platform=st.lists(st.sampled_from(["linux", "macos"]), min_size=1, max_size=4),
 )
 def test_valid_records_remain_valid_after_normalization(text: str, platform: list[str]):
-    record = {
-        "id": "generated-record",
-        "text": text,
-        "label": "safe",
-        "family": "generated",
-        "platform": platform,
-        "shell": "bash",
-        "risk_reasons": [],
-        "source": "test",
-        "generator": "hypothesis",
-        "prompt_version": "v1",
-        "batch_id": "property",
-        "context_required": False,
-    }
+    record = valid_record(text=text, platform=platform)
 
-    normalized = validate_record(record)
+    normalized = validate_record(record, CONTRACT)
 
     assert normalized["text"] == normalize_text(text)
     assert normalized["platform"] == sorted(set(platform))
-    assert validate_record(normalized) == normalized
+    assert validate_record(normalized, CONTRACT) == normalized

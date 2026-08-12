@@ -41,6 +41,45 @@ def test_claude_command_uses_noninteractive_print_mode(tmp_path: Path):
     assert output.name == "claude-batch-002.raw"
 
 
+def test_std_slop_command_uses_manifest_model(tmp_path: Path):
+    manifest = write_task(tmp_path, "std_slop")
+
+    command, request, output = generation_command(
+        manifest, "std_slop", "001", "boundaries"
+    )
+
+    assert command == [
+        "std_slop",
+        "--model",
+        "test-model",
+        "--prompt",
+        request,
+        "--output",
+        "json",
+    ]
+    assert "Batch ID: 001" in request
+    assert output.name == "std_slop-batch-001.raw"
+
+
+def test_std_slop_model_flag_overrides_manifest_model(tmp_path: Path):
+    manifest = write_task(tmp_path, "std_slop")
+
+    command, _, _ = generation_command(
+        manifest, "std_slop", "001", "boundaries", model="deepseek-v4-flash-latest:high"
+    )
+
+    assert command[2] == "deepseek-v4-flash-latest:high"
+
+
+def test_std_slop_rejects_empty_resolved_model(tmp_path: Path):
+    manifest = write_task(tmp_path, "std_slop")
+    text = manifest.read_text(encoding="utf-8").replace("model: test-model", "model: ")
+    manifest.write_text(text, encoding="utf-8")
+
+    with pytest.raises(GenerationError, match="std_slop model must be non-empty"):
+        generation_command(manifest, "std_slop", "001", "boundaries")
+
+
 def test_generation_rejects_backend_not_configured_by_task(tmp_path: Path):
     manifest = write_task(tmp_path, "std_slop")
 

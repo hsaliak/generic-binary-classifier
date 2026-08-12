@@ -1,4 +1,4 @@
-"""Dataset record validation and deterministic normalization."""
+"""Manifest-driven dataset record validation and deterministic normalization."""
 
 from __future__ import annotations
 
@@ -10,36 +10,91 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
-LABELS = frozenset({"safe", "unsafe"})
-PLATFORMS = frozenset({"linux", "macos"})
-SHELLS = frozenset({"bash", "zsh", "sh", "other"})
-REQUIRED_FIELDS = frozenset(
-    {
-        "id",
-        "text",
-        "label",
-        "family",
-        "platform",
-        "shell",
-        "risk_reasons",
-        "source",
-        "generator",
-        "prompt_version",
-        "batch_id",
-        "context_required",
-    }
-)
+import yaml
 
 
 class RecordValidationError(ValueError):
-    """A record does not satisfy the classification record contract."""
+    """A record does not satisfy its task record contract."""
+
+
+@dataclass(frozen=True)
+class RecordContract:
+    """Record shape derived from a task manifest and its JSON Schema file."""
+
+    labels: frozenset[str]
+    input_fields: tuple[str, ...]
+    required_string_fields: frozenset[str]
+    string_enum_fields: dict[str, frozenset[str]]
+    array_enum_fields: dict[str, frozenset[str]]
+    array_string_fields: frozenset[str]
+    boolean_fields: frozenset[str]
+
+    @property
+    def required_fields(self) -> frozenset[str]:
+        return (
+            self.required_string_fields
+            | frozenset(self.string_enum_fields)
+            | frozenset(self.array_enum_fields)
+            | self.array_string_fields
+            | self.boolean_fields
+        )
+
+    @property
+    def allowed_fields(self) -> frozenset[str]:
+        return self.required_fields
+
+
+def load_record_contract(manifest: Path) -> RecordContract:
+    """Derive the record contract from the manifest labels and record schema."""
+    try:
+        raw: dict[str, Any] = yaml.safe_load(manifest.read_text(encoding="utf-8"))
+        labels = frozenset(raw["labels"]["values"])
+        input_fields = tuple(raw["input"]["fields"])
+        schema = json.loads(
+            Path(raw["data"]["record_schema"]).read_text(encoding="utf-8")
+        )
+    except (OSError, KeyError, TypeError, json.JSONDecodeError, yaml.YAMLError) as e:
+        raise RecordValidationError(f"cannot load record contract for {manifest}: {e}")
+
+    plain_strings: set[str] = set()
+    string_enums: dict[str, frozenset[str]] = {}
+    array_enums: dict[str, frozenset[str]] = {}
+    array_strings: set[str] = set()
+    booleans: set[str] = set()
+
+    for name, spec in schema.get("properties", {}).items():
+        kind = spec.get("type")
+        if kind == "string":
+            allowed = spec.get("enum") or []
+            if allowed:
+                string_enums[name] = frozenset(allowed)
+            else:
+                plain_strings.add(name)
+        elif kind == "boolean":
+            booleans.add(name)
+        elif kind == "array":
+            items = spec.get("items", {})
+            item_enums = items.get("enum") if isinstance(items, dict) else None
+            if item_enums:
+                array_enums[name] = frozenset(item_enums)
+            else:
+                array_strings.add(name)
+    return RecordContract(
+        labels=labels,
+        input_fields=input_fields,
+        required_string_fields=frozenset(plain_strings),
+        string_enum_fields=string_enums,
+        array_enum_fields=array_enums,
+        array_string_fields=frozenset(array_strings),
+        boolean_fields=frozenset(booleans),
+    )
 
 
 def normalize_text(text: str) -> str:
-    """Return the comparison form while preserving command semantics.
+    """Return the comparison form while preserving meaningful interior structure.
 
     Unicode normalization and trimming remove generator noise. Interior whitespace
-    is intentionally preserved because it can change shell quoting and arguments.
+    is intentionally preserved because it can change prompt and command semantics.
     """
     return unicodedata.normalize("NFKC", text).strip()
 
@@ -48,16 +103,16 @@ def _require_string(record: dict[str, Any], field: str) -> str:
     value = record.get(field)
     if not isinstance(value, str) or not value.strip():
         raise RecordValidationError(f"{field} must be a non-empty string")
-    return value
+    return normalize_text(value)
 
 
-def validate_record(record: dict[str, Any]) -> dict[str, Any]:
-    """Validate one record and return a normalized copy."""
+def validate_record(record: dict[str, Any], contract: RecordContract) -> dict[str, Any]:
+    """Validate one record against the task contract and return a normalized copy."""
     if not isinstance(record, dict):
         raise RecordValidationError("record must be a JSON object")
 
-    unexpected = set(record) - REQUIRED_FIELDS
-    missing = REQUIRED_FIELDS - set(record)
+    missing = contract.required_fields - set(record)
+    unexpected = set(record) - contract.allowed_fields
     if missing:
         raise RecordValidationError(f"missing fields: {', '.join(sorted(missing))}")
     if unexpected:
@@ -66,46 +121,75 @@ def validate_record(record: dict[str, Any]) -> dict[str, Any]:
         )
 
     normalized = dict(record)
-    for field in (
-        "id",
-        "text",
-        "label",
-        "family",
-        "shell",
-        "source",
-        "generator",
-        "prompt_version",
-        "batch_id",
-    ):
+    for field in contract.required_string_fields:
         normalized[field] = _require_string(record, field)
 
-    normalized["text"] = normalize_text(normalized["text"])
-    if not normalized["text"]:
-        raise RecordValidationError("text must contain non-whitespace characters")
-    if normalized["label"] not in LABELS:
-        raise RecordValidationError("label must be safe or unsafe")
-    if normalized["shell"] not in SHELLS:
-        raise RecordValidationError(f"shell must be one of {sorted(SHELLS)}")
+    for field, allowed in contract.string_enum_fields.items():
+        value = _require_string(record, field)
+        if value not in allowed:
+            raise RecordValidationError(f"{field} must be one of {sorted(allowed)}")
+        normalized[field] = value
 
-    platform = record.get("platform")
-    if (
-        not isinstance(platform, list)
-        or not platform
-        or any(item not in PLATFORMS for item in platform)
-    ):
-        raise RecordValidationError("platform must be a non-empty list of linux/macos")
-    normalized["platform"] = sorted(set(platform))
+    label = record.get("label")
+    if not isinstance(label, str) or label not in contract.labels:
+        raise RecordValidationError(f"label must be one of {sorted(contract.labels)}")
+    normalized["label"] = label
 
-    reasons = record.get("risk_reasons")
-    if not isinstance(reasons, list) or any(
-        not isinstance(reason, str) or not reason.strip() for reason in reasons
-    ):
-        raise RecordValidationError("risk_reasons must be a list of non-empty strings")
-    normalized["risk_reasons"] = reasons
+    for field, allowed in contract.array_enum_fields.items():
+        values = record.get(field)
+        if (
+            not isinstance(values, list)
+            or not values
+            or any(item not in allowed for item in values)
+        ):
+            raise RecordValidationError(
+                f"{field} must be a non-empty list of {sorted(allowed)}"
+            )
+        normalized[field] = sorted(set(values))
 
-    if not isinstance(record.get("context_required"), bool):
-        raise RecordValidationError("context_required must be boolean")
+    for field in contract.array_string_fields:
+        values = record.get(field)
+        if not isinstance(values, list) or any(
+            not isinstance(value, str) or not value.strip() for value in values
+        ):
+            raise RecordValidationError(f"{field} must be a list of non-empty strings")
+        normalized[field] = values
+
+    for field in contract.boolean_fields:
+        if not isinstance(record.get(field), bool):
+            raise RecordValidationError(f"{field} must be boolean")
     return normalized
+
+
+def read_jsonl(path: Path, contract: RecordContract) -> list[dict[str, Any]]:
+    """Read, validate, and reject duplicate record IDs and canonical inputs."""
+    records: list[dict[str, Any]] = []
+    ids: set[str] = set()
+    texts: set[str] = set()
+    with path.open(encoding="utf-8") as stream:
+        for line_number, line in enumerate(stream, start=1):
+            if not line.strip():
+                continue
+            try:
+                raw = json.loads(line)
+                record = validate_record(raw, contract)
+            except (json.JSONDecodeError, RecordValidationError) as error:
+                raise RecordValidationError(f"{path}:{line_number}: {error}") from error
+            if record["id"] in ids:
+                raise RecordValidationError(
+                    f"{path}:{line_number}: duplicate id {record['id']}"
+                )
+            text = record.get("text")
+            if isinstance(text, str):
+                if text in texts:
+                    message = f"{path}:{line_number}: duplicate normalized text"
+                    raise RecordValidationError(f"{message} {text!r}")
+                texts.add(text)
+            ids.add(record["id"])
+            records.append(record)
+    if not records:
+        raise RecordValidationError(f"{path}: no records")
+    return records
 
 
 @dataclass(frozen=True)
@@ -116,41 +200,17 @@ class DatasetSummary:
     platforms: dict[str, int]
 
 
-def read_jsonl(path: Path) -> list[dict[str, Any]]:
-    """Read, validate, and reject duplicate record IDs and command text."""
-    records: list[dict[str, Any]] = []
-    ids: set[str] = set()
-    texts: set[str] = set()
-    with path.open(encoding="utf-8") as stream:
-        for line_number, line in enumerate(stream, start=1):
-            if not line.strip():
-                continue
-            try:
-                raw = json.loads(line)
-                record = validate_record(raw)
-            except (json.JSONDecodeError, RecordValidationError) as error:
-                raise RecordValidationError(f"{path}:{line_number}: {error}") from error
-            if record["id"] in ids:
-                raise RecordValidationError(
-                    f"{path}:{line_number}: duplicate id {record['id']}"
-                )
-            if record["text"] in texts:
-                message = f"{path}:{line_number}: duplicate normalized text"
-                raise RecordValidationError(f"{message} {record['text']!r}")
-            ids.add(record["id"])
-            texts.add(record["text"])
-            records.append(record)
-    if not records:
-        raise RecordValidationError(f"{path}: no records")
-    return records
-
-
-def summarize(records: Iterable[dict[str, Any]]) -> DatasetSummary:
+def summarize(
+    records: Iterable[dict[str, Any]], contract: RecordContract
+) -> DatasetSummary:
     records = list(records)
     labels = Counter(record["label"] for record in records)
     families = Counter(record["family"] for record in records)
     platforms = Counter(
-        platform for record in records for platform in record["platform"]
+        platform
+        for record in records
+        if "platform" in record
+        for platform in record["platform"]
     )
     return DatasetSummary(
         records=len(records),
@@ -171,18 +231,19 @@ def write_jsonl(records: Iterable[dict[str, Any]], path: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Validate command-classifier JSONL data."
+        description="Validate task JSONL data against its record contract."
     )
+    parser.add_argument("--manifest", required=True, type=Path)
     parser.add_argument("--input", required=True, type=Path)
     parser.add_argument(
         "--output", type=Path, help="Optional normalized JSONL destination."
     )
     args = parser.parse_args()
-
-    records = read_jsonl(args.input)
+    contract = load_record_contract(args.manifest)
+    records = read_jsonl(args.input, contract)
     if args.output:
         write_jsonl(records, args.output)
-    print(json.dumps(summarize(records).__dict__, sort_keys=True))
+    print(json.dumps(summarize(records, contract).__dict__, sort_keys=True))
 
 
 if __name__ == "__main__":
