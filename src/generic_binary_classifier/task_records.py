@@ -6,12 +6,15 @@ import json
 from pathlib import Path
 from typing import Any
 
-from commandclassifier.task_definition import (
+from generic_binary_classifier.task_definition import (
     TaskDefinition,
     TaskDefinitionError,
     serialize_inputs,
 )
-from commandclassifier.validate_data import RecordValidationError, normalize_text
+from generic_binary_classifier.validate_data import (
+    RecordValidationError,
+    normalize_text,
+)
 
 
 def record_inputs(record: dict[str, Any], task: TaskDefinition) -> dict[str, str]:

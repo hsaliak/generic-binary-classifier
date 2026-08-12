@@ -69,7 +69,7 @@ Python and Go must serialize fields identically.
 
 Completed:
 
-- Added `src/commandclassifier/task_definition.py`.
+- Added `src/generic_binary_classifier/task_definition.py`.
 - Added validated task properties:
   - task ID and version;
   - input fields;
@@ -89,7 +89,7 @@ Important rule: quote YAML labels such as `yes` and `no`; YAML otherwise interpr
 
 Completed:
 
-- Added `src/commandclassifier/task_records.py`.
+- Added `src/generic_binary_classifier/task_records.py`.
 - Supports existing command-safety records with top-level `text`.
 - Supports generic records with an explicit `inputs` object.
 - Validates task-defined labels and input fields.

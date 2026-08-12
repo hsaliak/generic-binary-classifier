@@ -32,7 +32,7 @@ Generated records are candidate material, not trusted training data. Human revie
 Command-safety inference accepts one field:
 
 ```bash
-commandclassifier \
+generic-binclass \
   --artifact-dir artifacts/command-safety-v1 \
   --text 'rm -rf /tmp/example'
 ```
@@ -124,7 +124,7 @@ The resulting artifact is `artifacts/request-policy-v1/model.json` with its requ
 Use `--text` only for a one-field artifact:
 
 ```bash
-commandclassifier \
+generic-binclass \
   --artifact-dir artifacts/request-policy-v1 \
   --text 'candidate text'
 ```
@@ -132,7 +132,7 @@ commandclassifier \
 Use `--input-json` for multi-field artifacts:
 
 ```bash
-commandclassifier \
+generic-binclass \
   --artifact-dir artifacts/request-policy-v1 \
   --input-json '{
     "user_context": "Repository context",
@@ -144,7 +144,7 @@ Go uses the same v3 artifact and structured input contract:
 
 ```bash
 cd go
-go run ./cmd/command-classify \
+go run ./cmd/generic-binclass \
   --model ../artifacts/request-policy-v1/model.json \
   --input-json '{
     "user_context": "Repository context",

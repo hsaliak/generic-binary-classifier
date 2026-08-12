@@ -1,6 +1,6 @@
 import numpy as np
 
-from commandclassifier.cli import classify
+from generic_binary_classifier.cli import classify
 
 BUNDLE = {
     "labels": ["safe", "unsafe"],

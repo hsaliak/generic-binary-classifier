@@ -1,6 +1,6 @@
 # Reviewed Binary Text Classification Framework
 
-This is a  framework for building **reviewed synthetic binary text-classification tasks**: define a task once, generate and review its data, train a calibrated classifier, and ship a single portable artifact that runs identically in Python and Go.
+This is a framework for building **reviewed synthetic binary text-classification tasks**: define a task once, generate and review its data, train a calibrated classifier, and ship a single portable artifact that runs identically in Python and Go.
 The framework classifies text only. It never executes supplied text.
 
 ## What it does
@@ -64,7 +64,7 @@ The Python and Go commands load the same artifact, verify its hash and contract,
 ## Codebase layout
 
 ```text
-src/commandclassifier/   Python pipeline and CLI (generate, validate, merge, train, export, infer)
+src/generic_binary_classifier/   Python pipeline and CLI (generate, validate, merge, train, export, infer)
 go/                      Go inference runtime using the same v3 artifact
 templates/binary-task/   Scaffolding for a new task
 tasks/ prompts/ schemas/ Per-task manifests, generation prompts, record schemas

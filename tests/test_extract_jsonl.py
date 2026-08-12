@@ -3,7 +3,7 @@ import json
 from contextlib import redirect_stdout
 from unittest.mock import patch
 
-from commandclassifier.extract_jsonl import main
+from generic_binary_classifier.extract_jsonl import main
 
 
 def test_extract_jsonl_keeps_records_and_drops_prose():

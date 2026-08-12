@@ -1,7 +1,7 @@
 from hypothesis import given
 from hypothesis import strategies as st
 
-from commandclassifier.validate_data import normalize_text, validate_record
+from generic_binary_classifier.validate_data import normalize_text, validate_record
 from tests.test_validate_data import CONTRACT, valid_record
 
 command_texts = st.text(

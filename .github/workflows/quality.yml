@@ -32,5 +32,5 @@ jobs:
       - name: Go checks and bounded fuzzing
         run: >-
           cd go && go test ./... &&
-          go test -run=^$ -fuzz=FuzzClassifyNeverReturnsInvalidProbability -fuzztime=2s ./cmd/command-classify &&
-          go test -run=^$ -fuzz=FuzzV3ArtifactParsing -fuzztime=2s ./cmd/command-classify
+          go test -run=^$ -fuzz=FuzzClassifyNeverReturnsInvalidProbability -fuzztime=2s ./cmd/generic-binclass &&
+          go test -run=^$ -fuzz=FuzzV3ArtifactParsing -fuzztime=2s ./cmd/generic-binclass

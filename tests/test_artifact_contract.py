@@ -6,7 +6,7 @@ import joblib
 import numpy as np
 import pytest
 
-from commandclassifier.cli import classify, load_artifact
+from generic_binary_classifier.cli import classify, load_artifact
 
 
 class FakeModel:
@@ -30,6 +30,8 @@ def bundle() -> dict[str, object]:
         "normalization": {"unicode": "NFC"},
         "word": {},
         "char": {},
+        "coefficients": [[0.5]],
+        "intercept": [0.0],
         "calibration": {"method": "sigmoid"},
         "decision_policy": {
             "positive_probability_threshold": 0.8,

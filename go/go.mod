@@ -1,4 +1,4 @@
-module commandclassifier
+module generic-binary-classifier
 
 go 1.25
 

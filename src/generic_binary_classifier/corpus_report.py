@@ -1,4 +1,4 @@
-"""Report corpus coverage and reject development/evaluation command overlap."""
+"""Report corpus coverage and reject development/evaluation input overlap."""
 
 from __future__ import annotations
 
@@ -7,9 +7,12 @@ import hashlib
 import json
 from pathlib import Path
 
-from commandclassifier.task_definition import TaskDefinition, load_task_definition
-from commandclassifier.task_records import read_task_jsonl
-from commandclassifier.validate_data import (
+from generic_binary_classifier.task_definition import (
+    TaskDefinition,
+    load_task_definition,
+)
+from generic_binary_classifier.task_records import read_task_jsonl
+from generic_binary_classifier.validate_data import (
     RecordContract,
     load_record_contract,
     read_jsonl,
@@ -63,15 +66,12 @@ def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--development", type=Path, required=True)
     p.add_argument("--evaluation", type=Path, required=True)
-    p.add_argument("--manifest", type=Path)
+    p.add_argument("--manifest", type=Path, required=True)
     p.add_argument("--output", type=Path)
     a = p.parse_args()
-    if a.manifest is not None:
-        task = load_task_definition(a.manifest)
-        contract = load_record_contract(a.manifest)
-        report = build_report(a.development, a.evaluation, task, contract)
-    else:
-        report = build_report(a.development, a.evaluation)
+    task = load_task_definition(a.manifest)
+    contract = load_record_contract(a.manifest)
+    report = build_report(a.development, a.evaluation, task, contract)
     if a.output:
         a.output.write_text(
             json.dumps(report, indent=2, sort_keys=True), encoding="utf-8"

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from commandclassifier.task_definition import (
+from generic_binary_classifier.task_definition import (
     TaskDefinitionError,
     load_task_definition,
     serialize_inputs,

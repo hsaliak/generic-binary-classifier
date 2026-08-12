@@ -10,7 +10,7 @@ from typing import Any
 
 import sklearn
 
-from commandclassifier.task_definition import TaskDefinition
+from generic_binary_classifier.task_definition import TaskDefinition
 
 FORMAT_VERSION = 3
 
